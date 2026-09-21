@@ -41,21 +41,36 @@ class AtlassianClient:
         base_url: Optional[str] = None,
         email: Optional[str] = None,
         api_token: Optional[str] = None,
+        project_key: Optional[str] = None,
+        board_id: Optional[str] = None,
+        confluence_space: Optional[str] = None,
         simulate: bool = False,
     ):
         self.simulate = simulate
         self.base_url = (base_url or os.environ.get("ATLASSIAN_URL", "")).rstrip("/")
         self.email = email or os.environ.get("ATLASSIAN_EMAIL", "")
         self.api_token = api_token or os.environ.get("ATLASSIAN_API_TOKEN", "")
+        self.project_key = project_key or os.environ.get("JIRA_PROJECT_KEY")
+        self.board_id = board_id or os.environ.get("JIRA_BOARD_ID")
+        self.confluence_space = confluence_space or os.environ.get("CONFLUENCE_SPACE")
 
         # Try reading local config file if credentials are empty
         config_path = ROOT_DIR / ".atlassian_config.json"
-        if not self.base_url and config_path.is_file():
+        if config_path.is_file():
             try:
                 cfg = json.loads(config_path.read_text(encoding="utf-8"))
-                self.base_url = cfg.get("url", "").rstrip("/")
-                self.email = cfg.get("email", "")
-                self.api_token = cfg.get("api_token", "")
+                if not self.base_url:
+                    self.base_url = cfg.get("url", "").rstrip("/")
+                if not self.email:
+                    self.email = cfg.get("email", "")
+                if not self.api_token:
+                    self.api_token = cfg.get("api_token", "")
+                if not self.project_key:
+                    self.project_key = cfg.get("project_key")
+                if not self.board_id:
+                    self.board_id = str(cfg.get("board_id")) if cfg.get("board_id") else None
+                if not self.confluence_space:
+                    self.confluence_space = cfg.get("confluence_space")
             except Exception:
                 pass
 
@@ -122,6 +137,51 @@ class AtlassianClient:
             "account_id": data.get("accountId"),
             "jira_status": "CONNECTED",
         }
+
+    def get_board_issues(
+        self,
+        board_id: Optional[str] = None,
+        status: Optional[str] = None,
+        project_key: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """Queries tickets from a specific Jira Agile Kanban/Scrum Board with optional status and project filtering."""
+        target_board = board_id or self.board_id
+        pkey = project_key or self.project_key
+        if not target_board and not self.simulate:
+            raise ValueError("No Board ID specified. Provide --board-id or set JIRA_BOARD_ID.")
+
+        if self.simulate:
+            prefix = pkey or "KMSAFE"
+            sample_issues = [
+                {"key": f"{prefix}-101", "summary": "Setup Bluetooth tracking receiver", "status": "Ready for Dev", "priority": "High"},
+                {"key": f"{prefix}-102", "summary": "CanvasKit Button styling alignment", "status": "In Progress", "priority": "Medium"},
+                {"key": f"{prefix}-103", "summary": "Export PDF expenses report", "status": "Ready for Dev", "priority": "High"},
+                {"key": f"{prefix}-104", "summary": "Station historical price graphs", "status": "Backlog", "priority": "Low"},
+            ]
+            if status:
+                return [i for i in sample_issues if i["status"].lower() == status.lower()]
+            return sample_issues
+
+        endpoint = f"rest/agile/1.0/board/{target_board}/issue"
+        jql_parts = []
+        if pkey:
+            jql_parts.append(f"project = '{pkey}'")
+        if status:
+            jql_parts.append(f"status = '{status}'")
+        if jql_parts:
+            endpoint += "?jql=" + urllib.parse.quote(" AND ".join(jql_parts))
+
+        data = self._http_request("GET", endpoint)
+        issues = data.get("issues", [])
+        return [
+            {
+                "key": i.get("key"),
+                "summary": i.get("fields", {}).get("summary"),
+                "status": i.get("fields", {}).get("status", {}).get("name"),
+                "priority": i.get("fields", {}).get("priority", {}).get("name"),
+            }
+            for i in issues
+        ]
 
     def get_jira_issue(self, issue_key: str) -> Dict[str, Any]:
         """Fetches issue details (summary, description, status, priority, comments)."""
@@ -391,6 +451,31 @@ def cmd_transition(client: AtlassianClient, issue_key: str, status_name: str):
         sys.exit(1)
 
 
+def cmd_board(
+    client: AtlassianClient,
+    board_id: Optional[str] = None,
+    status: Optional[str] = None,
+    project_key: Optional[str] = None,
+):
+    target = board_id or client.board_id or "Default Board"
+    pkey = project_key or client.project_key or "ALL"
+    print(f"[*] Querying Kanban/Scrum Board '{target}' (Project: {pkey}, Status filter: {status or 'ALL'})...")
+    try:
+        issues = client.get_board_issues(board_id=board_id, status=status, project_key=project_key)
+        print("===========================================================")
+        print(f"   KANBAN BOARD ISSUES ({len(issues)})")
+        print("===========================================================")
+        if not issues:
+            print("   (No matching tickets found on this board)")
+        else:
+            for iss in issues:
+                print(f"   [{iss.get('status'):<14}] {iss.get('key'):<12} : {iss.get('summary')} ({iss.get('priority')})")
+        print("===========================================================")
+    except Exception as e:
+        print(f"❌ Error fetching board: {e}")
+        sys.exit(1)
+
+
 def cmd_comment(client: AtlassianClient, issue_key: str, message: str):
     print(f"[*] Posting feedback comment to {issue_key}...")
     try:
@@ -463,12 +548,21 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--url", help="Atlassian Cloud URL (e.g. https://domain.atlassian.net)")
     parser.add_argument("--email", help="Atlassian Account Email")
     parser.add_argument("--token", help="Atlassian API Token")
+    parser.add_argument("--project-key", help="Jira Project Key (e.g. KMSAFE, FLEET)")
+    parser.add_argument("--board-id", help="Jira Agile Board ID for Kanban/Scrum filtering")
+    parser.add_argument("--space", help="Confluence Space Key")
     parser.add_argument("--simulate", action="store_true", help="Run in mock/simulation mode without live credentials.")
 
     subparsers = parser.add_subparsers(dest="command", help="Bridge command to execute")
 
     # check
     subparsers.add_parser("check", help="Test Atlassian connection and permissions.")
+
+    # board
+    p_board = subparsers.add_parser("board", help="List tickets from a specific Jira Agile Kanban/Scrum board.")
+    p_board.add_argument("--board-id", help="Jira Agile Board ID (defaults to configured board)")
+    p_board.add_argument("--project-key", help="Jira Project Key (e.g. KMSAFE, FLEET)")
+    p_board.add_argument("--status", help="Filter by column/status (e.g. 'Ready for Dev', 'In Progress')")
 
     # fetch
     p_fetch = subparsers.add_parser("fetch", help="Fetch a Jira issue.")
@@ -499,7 +593,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     # sync-confluence
     p_sync = subparsers.add_parser("sync-confluence", help="Publish OpenSpec living specs to Confluence.")
-    p_sync.add_argument("space_key", help="Confluence Space Key (e.g. DEV, KMSAFE)")
+    p_sync.add_argument("space_key", nargs="?", help="Confluence Space Key (defaults to configured space)")
 
     return parser
 
@@ -516,11 +610,16 @@ def main():
         base_url=args.url,
         email=args.email,
         api_token=args.token,
+        project_key=args.project_key,
+        board_id=args.board_id,
+        confluence_space=args.space,
         simulate=args.simulate,
     )
 
     if args.command == "check":
         cmd_check(client)
+    elif args.command == "board":
+        cmd_board(client, board_id=args.board_id, status=args.status, project_key=args.project_key)
     elif args.command == "fetch":
         cmd_fetch(client, args.issue_key, scaffold_openspec=args.scaffold_openspec, require_status=args.require_status)
     elif args.command == "refine":
@@ -532,7 +631,11 @@ def main():
     elif args.command == "report-crash":
         cmd_report_crash(client, args.project_key, args.defect_json)
     elif args.command == "sync-confluence":
-        cmd_sync_confluence(client, args.space_key)
+        target_space = args.space_key or client.confluence_space
+        if not target_space and not client.simulate:
+            print("[ERROR] Confluence Space Key missing. Provide space_key or --space.")
+            sys.exit(1)
+        cmd_sync_confluence(client, target_space or "DEV")
 
 
 if __name__ == "__main__":
