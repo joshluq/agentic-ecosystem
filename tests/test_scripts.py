@@ -57,6 +57,10 @@ class TestHelperScripts(unittest.TestCase):
         cls.sanity_check = load_module(
             "sanity_check", skills_dir / "android-quality" / "scripts" / "sanity_check.py"
         )
+        cls.crash_listener = load_module(
+            "crash_listener",
+            skills_dir / "senior-debugging-engineer" / "scripts" / "crash_listener.py",
+        )
 
     # 1. device_runner.py tests
     def test_device_runner_parser_and_env(self):
@@ -269,6 +273,67 @@ Acceptance Criteria:
         finally:
             if temp_json.is_file():
                 temp_json.unlink()
+
+    # 9. crash_listener.py tests
+    def test_crash_listener_parser(self):
+        parser = self.crash_listener.build_parser()
+        self.assertIsNotNone(parser)
+        help_text = parser.format_help()
+        self.assertIn("--live", help_text)
+        self.assertIn("--dump", help_text)
+        self.assertIn("--file", help_text)
+        self.assertIn("--simulate", help_text)
+        self.assertIn("--package", help_text)
+
+    def test_crash_listener_simulation_npe(self):
+        sim_log = self.crash_listener.generate_simulation("npe", "es.joshluq.kmsafe")
+        crashes = self.crash_listener.parse_logcat_text(sim_log, "es.joshluq.kmsafe")
+        self.assertEqual(len(crashes), 1)
+        crash = crashes[0]
+        self.assertEqual(crash.crash_type, "FATAL_EXCEPTION")
+        self.assertEqual(crash.exception_class, "java.lang.NullPointerException")
+        self.assertEqual(crash.thread_name, "main")
+        primary = crash.primary_app_frame
+        self.assertIsNotNone(primary)
+        self.assertEqual(primary["file"], "ExpensesViewModel.kt")
+        self.assertEqual(primary["line"], 42)
+        self.assertIn("es.joshluq.kmsafe", primary["class_name"])
+
+    def test_crash_listener_simulation_compose(self):
+        sim_log = self.crash_listener.generate_simulation("compose", "es.joshluq.kmsafe")
+        crashes = self.crash_listener.parse_logcat_text(sim_log, "es.joshluq.kmsafe")
+        self.assertEqual(len(crashes), 1)
+        crash = crashes[0]
+        self.assertEqual(crash.exception_class, "java.lang.IllegalStateException")
+        primary = crash.primary_app_frame
+        self.assertIsNotNone(primary)
+        self.assertEqual(primary["file"], "OverviewCard.kt")
+        self.assertEqual(primary["line"], 64)
+
+    def test_crash_listener_simulation_anr(self):
+        sim_log = self.crash_listener.generate_simulation("anr", "es.joshluq.kmsafe")
+        crashes = self.crash_listener.parse_logcat_text(sim_log, "es.joshluq.kmsafe")
+        self.assertEqual(len(crashes), 1)
+        crash = crashes[0]
+        self.assertEqual(crash.crash_type, "ANR")
+        self.assertEqual(crash.process_name, "es.joshluq.kmsafe")
+        self.assertEqual(crash.thread_name, "main")
+
+    def test_crash_listener_defect_ticket_generation(self):
+        sim_log = self.crash_listener.generate_simulation("npe", "es.joshluq.kmsafe")
+        crashes = self.crash_listener.parse_logcat_text(sim_log, "es.joshluq.kmsafe")
+        defect = crashes[0].to_defect_issue()
+        self.assertTrue(defect["issue_id"].startswith("ISSUE-CRASH-"))
+        self.assertEqual(defect["severity"], "CRITICAL")
+        self.assertEqual(defect["target_role_for_remediation"], "Senior Android Developer")
+        self.assertEqual(defect["upstream_artifact_ref"], "ExpensesViewModel.kt:42")
+        self.assertGreaterEqual(len(defect["reproduction_steps"]), 2)
+        self.assertIn("ExpensesViewModel", defect["expected"])
+        self.assertIn("NullPointerException", defect["actual"])
+        # Validate markdown report generation
+        md_report = crashes[0].to_markdown_report()
+        self.assertIn("# Incident Diagnostic Report", md_report)
+        self.assertIn("ExpensesViewModel.kt:42", md_report)
 
 
 if __name__ == "__main__":

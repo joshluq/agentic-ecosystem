@@ -106,6 +106,7 @@ class TestSkillsSpecification(unittest.TestCase):
             ("android-quality", "lint_triage.py"),
             ("android-quality", "logcat_triage.py"),
             ("android-quality", "sanity_check.py"),
+            ("senior-debugging-engineer", "crash_listener.py"),
         ]
 
         for skill_name, script_name in expected_scripts:
