@@ -29,6 +29,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
 
 
 # ==============================================================================
@@ -437,7 +439,10 @@ def cmd_fetch(client: AtlassianClient, issue_key: str, scaffold_openspec: bool =
                 print(f"✅ Status Guard PASSED: Ticket is in required status '{require_status}'.")
 
         if scaffold_openspec:
-            from scripts.openspec_cli import cmd_propose
+            try:
+                from scripts.openspec_cli import cmd_propose
+            except ImportError:
+                from openspec_cli import cmd_propose
             print(f"[*] Scaffolding OpenSpec proposal for {issue_key}...")
             cmd_propose(issue_key, title=issue.get("summary"))
     except Exception as e:
