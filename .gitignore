@@ -30,5 +30,6 @@ ehthumbs.db
 # Logs and environment
 *.log
 .env
+.atlassian_config.json
 venv/
 .venv/

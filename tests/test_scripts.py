@@ -65,6 +65,10 @@ class TestHelperScripts(unittest.TestCase):
             "openspec_cli",
             PROJECT_ROOT / "scripts" / "openspec_cli.py",
         )
+        cls.atlassian_bridge = load_module(
+            "atlassian_bridge",
+            PROJECT_ROOT / "scripts" / "atlassian_bridge.py",
+        )
 
     # 1. device_runner.py tests
     def test_device_runner_parser_and_env(self):
@@ -373,6 +377,47 @@ Acceptance Criteria:
             spec_file = self.openspec_cli.SPECS_DIR / f"features_{change_id.lower().replace('-', '_')}.md"
             if spec_file.is_file():
                 spec_file.unlink()
+
+    # 11. atlassian_bridge.py tests
+    def test_atlassian_bridge_parser(self):
+        parser = self.atlassian_bridge.build_parser()
+        self.assertIsNotNone(parser)
+        help_text = parser.format_help()
+        self.assertIn("--url", help_text)
+        self.assertIn("--email", help_text)
+        self.assertIn("--simulate", help_text)
+        self.assertIn("check", help_text)
+        self.assertIn("fetch", help_text)
+        self.assertIn("comment", help_text)
+        self.assertIn("report-crash", help_text)
+        self.assertIn("sync-confluence", help_text)
+
+    def test_atlassian_bridge_simulation_operations(self):
+        client = self.atlassian_bridge.AtlassianClient(simulate=True)
+        self.assertTrue(client.configured)
+
+        # 1. Test connection
+        conn = client.test_connection()
+        self.assertTrue(conn["success"])
+        self.assertTrue(conn["simulated"])
+
+        # 2. Get issue
+        issue = client.get_jira_issue("KMSAFE-104")
+        self.assertEqual(issue["key"], "KMSAFE-104")
+        self.assertIn("Acceptance Criteria", issue["description"])
+
+        # 3. Create issue
+        created = client.create_jira_issue("KMSAFE", "New Feature", "Description")
+        self.assertTrue(created["key"].startswith("KMSAFE-"))
+
+        # 4. Add comment
+        comment = client.add_jira_comment("KMSAFE-104", "Clarification needed on VAT")
+        self.assertTrue(comment["simulated"])
+
+        # 5. Publish confluence page
+        page = client.publish_confluence_page("DEV", "Living Spec: Expenses", "# Markdown")
+        self.assertEqual(page["space"], "DEV")
+        self.assertEqual(page["id"], "20001")
 
 
 if __name__ == "__main__":
