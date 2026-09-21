@@ -213,6 +213,53 @@ class AtlassianClient:
         }
         return self._http_request("POST", f"rest/api/3/issue/{issue_key}/comment", {"body": adf_comment})
 
+    def update_jira_issue(
+        self,
+        issue_key: str,
+        description: Optional[str] = None,
+        summary: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Updates fields of an existing Jira issue (e.g. refining description with Acceptance Criteria)."""
+        if self.simulate:
+            return {"key": issue_key, "updated": True, "simulated": True}
+
+        fields: Dict[str, Any] = {}
+        if summary:
+            fields["summary"] = summary
+        if description:
+            fields["description"] = {
+                "type": "doc",
+                "version": 1,
+                "content": [
+                    {
+                        "type": "paragraph",
+                        "content": [{"type": "text", "text": description}],
+                    }
+                ],
+            }
+        return self._http_request("PUT", f"rest/api/3/issue/{issue_key}", {"fields": fields})
+
+    def transition_jira_issue(self, issue_key: str, target_status: str) -> Dict[str, Any]:
+        """Transitions an issue to a new status (e.g. 'Ready for Dev', 'In Progress', 'Done')."""
+        if self.simulate:
+            return {"key": issue_key, "new_status": target_status, "simulated": True}
+
+        transitions_data = self._http_request("GET", f"rest/api/3/issue/{issue_key}/transitions")
+        transitions = transitions_data.get("transitions", [])
+
+        target_trans = None
+        for t in transitions:
+            if t.get("name", "").lower() == target_status.lower() or t.get("to", {}).get("name", "").lower() == target_status.lower():
+                target_trans = t
+                break
+
+        if not target_trans:
+            avail = [t.get("name") for t in transitions]
+            raise ValueError(f"Cannot transition {issue_key} to '{target_status}'. Available transitions: {avail}")
+
+        payload = {"transition": {"id": target_trans["id"]}}
+        return self._http_request("POST", f"rest/api/3/issue/{issue_key}/transitions", payload)
+
     # --------------------------------------------------------------------------
     # Confluence Operations
     # --------------------------------------------------------------------------
@@ -279,19 +326,29 @@ def cmd_check(client: AtlassianClient):
         sys.exit(1)
 
 
-def cmd_fetch(client: AtlassianClient, issue_key: str, scaffold_openspec: bool = False):
+def cmd_fetch(client: AtlassianClient, issue_key: str, scaffold_openspec: bool = False, require_status: Optional[str] = None):
     print(f"[*] Ingesting Jira ticket: {issue_key}...")
     try:
         issue = client.get_jira_issue(issue_key)
+        status = issue.get("status", "")
         print("-----------------------------------------------------------")
         print(f"Key      : {issue.get('key')}")
         print(f"Summary  : {issue.get('summary')}")
-        print(f"Status   : {issue.get('status')}")
+        print(f"Status   : {status}")
         print(f"Priority : {issue.get('priority')}")
         print("-----------------------------------------------------------")
         print("Description:")
         print(issue.get("description", "").strip())
         print("-----------------------------------------------------------")
+
+        if require_status:
+            if status.lower() != require_status.lower():
+                print(f"⚠️ [BLOCKED BY STATUS GUARD] Ticket {issue_key} is in status '{status}'.")
+                print(f"   Required status to proceed: '{require_status}'.")
+                print(f"   Refine or transition the ticket in Jira before implementing.")
+                sys.exit(1)
+            else:
+                print(f"✅ Status Guard PASSED: Ticket is in required status '{require_status}'.")
 
         if scaffold_openspec:
             from scripts.openspec_cli import cmd_propose
@@ -299,6 +356,38 @@ def cmd_fetch(client: AtlassianClient, issue_key: str, scaffold_openspec: bool =
             cmd_propose(issue_key, title=issue.get("summary"))
     except Exception as e:
         print(f"❌ Error fetching issue: {e}")
+        sys.exit(1)
+
+
+def cmd_refine(client: AtlassianClient, issue_key: str, criteria_file_or_text: str, transition_to: Optional[str] = None):
+    print(f"[*] PO Refinement: Updating Jira ticket {issue_key} with formal acceptance criteria...")
+    try:
+        # Check if input is a file path
+        path = Path(criteria_file_or_text)
+        if path.is_file():
+            new_desc = path.read_text(encoding="utf-8")
+        else:
+            new_desc = criteria_file_or_text
+
+        client.update_jira_issue(issue_key, description=new_desc)
+        print(f"✅ Issue {issue_key} description successfully updated with refined specifications.")
+
+        if transition_to:
+            print(f"[*] Moving issue to '{transition_to}'...")
+            client.transition_jira_issue(issue_key, transition_to)
+            print(f"✅ Issue transitioned to '{transition_to}'.")
+    except Exception as e:
+        print(f"❌ Error refining issue: {e}")
+        sys.exit(1)
+
+
+def cmd_transition(client: AtlassianClient, issue_key: str, status_name: str):
+    print(f"[*] Transitioning issue {issue_key} to '{status_name}'...")
+    try:
+        res = client.transition_jira_issue(issue_key, status_name)
+        print(f"✅ Issue {issue_key} transitioned successfully to '{status_name}'.")
+    except Exception as e:
+        print(f"❌ Error transitioning issue: {e}")
         sys.exit(1)
 
 
@@ -385,6 +474,18 @@ def build_parser() -> argparse.ArgumentParser:
     p_fetch = subparsers.add_parser("fetch", help="Fetch a Jira issue.")
     p_fetch.add_argument("issue_key", help="Jira issue key (e.g. KMSAFE-104)")
     p_fetch.add_argument("--scaffold-openspec", action="store_true", help="Scaffold an OpenSpec proposal from this issue.")
+    p_fetch.add_argument("--require-status", help="State Guard: Require specific issue status (e.g. 'Ready for Dev')")
+
+    # refine
+    p_refine = subparsers.add_parser("refine", help="PO Refinement: Update ticket with formal acceptance criteria.")
+    p_refine.add_argument("issue_key", help="Jira issue key (e.g. KMSAFE-105)")
+    p_refine.add_argument("criteria", help="Path to markdown file or string containing refined Acceptance Criteria")
+    p_refine.add_argument("--status", default="Refined", help="Status to transition issue after refinement (default: Refined)")
+
+    # transition
+    p_trans = subparsers.add_parser("transition", help="Transition Jira issue status.")
+    p_trans.add_argument("issue_key", help="Jira issue key")
+    p_trans.add_argument("target_status", help="Target status name (e.g. 'Ready for Dev', 'In Progress', 'Done')")
 
     # comment
     p_com = subparsers.add_parser("comment", help="Add a comment to a Jira issue.")
@@ -421,7 +522,11 @@ def main():
     if args.command == "check":
         cmd_check(client)
     elif args.command == "fetch":
-        cmd_fetch(client, args.issue_key, scaffold_openspec=args.scaffold_openspec)
+        cmd_fetch(client, args.issue_key, scaffold_openspec=args.scaffold_openspec, require_status=args.require_status)
+    elif args.command == "refine":
+        cmd_refine(client, args.issue_key, args.criteria, transition_to=args.status)
+    elif args.command == "transition":
+        cmd_transition(client, args.issue_key, args.target_status)
     elif args.command == "comment":
         cmd_comment(client, args.issue_key, args.message)
     elif args.command == "report-crash":
