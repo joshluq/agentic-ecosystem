@@ -12,7 +12,12 @@ from pathlib import Path
 class TestSkillsSpecification(unittest.TestCase):
     def setUp(self):
         self.project_root = Path(__file__).resolve().parent.parent
-        self.skills_dir = self.project_root / "skills"
+        if (self.project_root / "skills").is_dir():
+            self.skills_dir = self.project_root / "skills"
+        elif (self.project_root / ".gemini" / "antigravity" / "skills").is_dir():
+            self.skills_dir = self.project_root / ".gemini" / "antigravity" / "skills"
+        else:
+            self.skills_dir = self.project_root / "skills"
 
     def test_all_expected_skills_exist(self):
         expected_skills = [

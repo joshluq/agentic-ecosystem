@@ -53,21 +53,23 @@ def install_ecosystem(target_dir: Path, mode: str = 'both', overwrite: bool = Tr
         copy_dir(skills_src, skills_dst, overwrite)
         print("    -> Skills installed successfully.")
 
-    # 2. Install SDD Contracts, Schemas & Templates
+    # 2. Install SDD Contracts, Schemas, Templates & Reference Walkthrough
     if mode in ('standalone', 'both'):
-        for folder in ('schemas', 'templates'):
+        for folder in ('schemas', 'templates', 'walkthrough'):
             src_f = source_root / folder
             dst_f = target_dir / folder
             print(f"\n[2] Installing {folder} to {dst_f}...")
             copy_dir(src_f, dst_f, overwrite)
 
-        # Copy AGENTS.md and PROJECT.md if not existing
+        # Copy AGENTS.md and PROJECT.md ONLY if not already existing
         for doc in ('AGENTS.md', 'PROJECT.md'):
             doc_src = source_root / doc
             doc_dst = target_dir / doc
-            if doc_src.exists() and (not doc_dst.exists() or overwrite):
+            if doc_src.exists() and not doc_dst.exists():
                 print(f"    -> Copying {doc} to target root...")
                 shutil.copy2(doc_src, doc_dst)
+            elif doc_dst.exists():
+                print(f"    -> Target already has {doc}, preserving existing file.")
 
         # Copy verification scripts & tests
         scripts_dst = target_dir / 'scripts'

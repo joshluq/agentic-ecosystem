@@ -26,7 +26,12 @@ def load_module(module_name: str, file_path: Path):
 class TestHelperScripts(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        skills_dir = PROJECT_ROOT / "skills"
+        if (PROJECT_ROOT / "skills").is_dir():
+            skills_dir = PROJECT_ROOT / "skills"
+        elif (PROJECT_ROOT / ".gemini" / "antigravity" / "skills").is_dir():
+            skills_dir = PROJECT_ROOT / ".gemini" / "antigravity" / "skills"
+        else:
+            skills_dir = PROJECT_ROOT / "skills"
         cls.device_runner = load_module(
             "device_runner", skills_dir / "android-device" / "scripts" / "device_runner.py"
         )
