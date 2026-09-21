@@ -77,12 +77,13 @@ sequenceDiagram
 
 ---
 
-## ⚡ The 10 Agentic Skills & Slash Commands
+## ⚡ The 11 Agentic Skills & Slash Commands
 
 Each skill folder in [`skills/`](skills/) defines a first-class Antigravity slash command.
 
 | Slash Command | Skill Directory | Description & Capabilities |
 | :--- | :--- | :--- |
+| **`/openspec`** | `skills/openspec` | **OpenSpec SDD & Living Spec Lifecycle**. Manages living specifications (`openspec/specs/`), scaffolds delta change folders (`openspec/changes/`), and merges verified deltas. |
 | **`/new-feature`** | `skills/new-feature` | **End-to-End SDD Feature Pipeline**. Orchestrates PO requirements, ADR generation, 4-Layer UI implementation, and QA verification. |
 | **`/fix-bug`** | `skills/fix-bug` | **Repro-First Defect Resolution**. Reproduces bugs via isolated tests, identifies root causes, applies minimal fixes, and verifies zero regressions. |
 | **`/idea-lab`** | `skills/idea-lab` | **Product & Tech Incubator**. Conducts market benchmark analysis, feasibility evaluations, UX explorations, and technical spike prototypes. |
@@ -103,6 +104,10 @@ android-agentic-ecosystem/
 ├── .github/
 │   └── workflows/
 │       └── agentic-verification.yml       # Continuous Integration workflow
+├── openspec/                              # OpenSpec Living Specifications & Lifecycle
+│   ├── specs/                             # Permanent living source of truth
+│   ├── changes/                           # Active delta changes (proposal, design, tasks)
+│   └── archive/                           # Historical record of merged changes
 ├── schemas/                               # SDD Draft-07 JSON Schemas
 │   ├── po_to_architect_handoff.schema.json
 │   ├── architect_to_dev_handoff.schema.json

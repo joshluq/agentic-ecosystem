@@ -61,6 +61,10 @@ class TestHelperScripts(unittest.TestCase):
             "crash_listener",
             skills_dir / "senior-debugging-engineer" / "scripts" / "crash_listener.py",
         )
+        cls.openspec_cli = load_module(
+            "openspec_cli",
+            PROJECT_ROOT / "scripts" / "openspec_cli.py",
+        )
 
     # 1. device_runner.py tests
     def test_device_runner_parser_and_env(self):
@@ -334,6 +338,41 @@ Acceptance Criteria:
         md_report = crashes[0].to_markdown_report()
         self.assertIn("# Incident Diagnostic Report", md_report)
         self.assertIn("ExpensesViewModel.kt:42", md_report)
+
+    # 10. openspec_cli.py tests
+    def test_openspec_lifecycle(self):
+        change_id = "TEST-UNIT-01"
+        try:
+            # 1. Propose
+            success = self.openspec_cli.cmd_propose(change_id, "Test Unit Feature")
+            self.assertTrue(success)
+            change_dir = self.openspec_cli.CHANGES_DIR / change_id
+            self.assertTrue(change_dir.is_dir())
+            self.assertTrue((change_dir / "proposal.md").is_file())
+            self.assertTrue((change_dir / "design.md").is_file())
+            self.assertTrue((change_dir / "tasks.md").is_file())
+            self.assertTrue((change_dir / "specs" / "delta_spec.md").is_file())
+
+            # 2. Validate
+            is_valid, errors = self.openspec_cli.cmd_validate(change_id)
+            self.assertTrue(is_valid, f"Validation errors: {errors}")
+
+            # 3. Mark tasks as complete
+            tasks_content = (change_dir / "tasks.md").read_text(encoding="utf-8")
+            (change_dir / "tasks.md").write_text(tasks_content.replace("- [ ]", "- [x]"), encoding="utf-8")
+
+            # 4. Archive
+            arch_success = self.openspec_cli.cmd_archive(change_id)
+            self.assertTrue(arch_success)
+            self.assertTrue((self.openspec_cli.ARCHIVE_DIR / change_id).is_dir())
+        finally:
+            # Clean up
+            import shutil
+            shutil.rmtree(self.openspec_cli.CHANGES_DIR / change_id, ignore_errors=True)
+            shutil.rmtree(self.openspec_cli.ARCHIVE_DIR / change_id, ignore_errors=True)
+            spec_file = self.openspec_cli.SPECS_DIR / f"features_{change_id.lower().replace('-', '_')}.md"
+            if spec_file.is_file():
+                spec_file.unlink()
 
 
 if __name__ == "__main__":

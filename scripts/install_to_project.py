@@ -53,9 +53,9 @@ def install_ecosystem(target_dir: Path, mode: str = 'both', overwrite: bool = Tr
         copy_dir(skills_src, skills_dst, overwrite)
         print("    -> Skills installed successfully.")
 
-    # 2. Install SDD Contracts, Schemas, Templates & Reference Walkthrough
+    # 2. Install SDD Contracts, Schemas, Templates, Walkthrough & OpenSpec
     if mode in ('standalone', 'both'):
-        for folder in ('schemas', 'templates', 'walkthrough'):
+        for folder in ('schemas', 'templates', 'walkthrough', 'openspec'):
             src_f = source_root / folder
             dst_f = target_dir / folder
             print(f"\n[2] Installing {folder} to {dst_f}...")

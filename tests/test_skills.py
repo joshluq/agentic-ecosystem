@@ -31,6 +31,7 @@ class TestSkillsSpecification(unittest.TestCase):
             "performance-optimization-tips",
             "po-digital-experience-fintech",
             "senior-debugging-engineer",
+            "openspec",
         ]
         for skill in expected_skills:
             skill_folder = self.skills_dir / skill
@@ -56,6 +57,7 @@ class TestSkillsSpecification(unittest.TestCase):
             "performance-optimization-tips",
             "po-digital-experience-fintech",
             "senior-debugging-engineer",
+            "openspec",
         ]
 
         for skill_name in expected_skills:
