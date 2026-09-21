@@ -183,6 +183,30 @@ class AtlassianClient:
             for i in issues
         ]
 
+    @staticmethod
+    def _extract_adf_text(node: Any) -> str:
+        """Extracts human-readable plain text recursively from Atlassian Document Format (ADF)."""
+        if not node:
+            return ""
+        if isinstance(node, str):
+            return node
+        if isinstance(node, dict):
+            ntype = node.get("type")
+            if ntype == "text":
+                return node.get("text", "")
+            children = node.get("content", [])
+            child_text = "".join(AtlassianClient._extract_adf_text(c) for c in children)
+            if ntype in ("paragraph", "heading"):
+                return child_text + "\n"
+            elif ntype == "bulletList":
+                return child_text + "\n"
+            elif ntype == "listItem":
+                return f"- {child_text.strip()}\n"
+            return child_text
+        if isinstance(node, list):
+            return "".join(AtlassianClient._extract_adf_text(c) for c in node)
+        return str(node)
+
     def get_jira_issue(self, issue_key: str) -> Dict[str, Any]:
         """Fetches issue details (summary, description, status, priority, comments)."""
         if self.simulate:
@@ -202,9 +226,11 @@ class AtlassianClient:
         fields = data.get("fields", {})
 
         # Extract description text (Atlassian Document Format or string)
-        desc = fields.get("description", "")
-        if isinstance(desc, dict):
-            desc = json.dumps(desc)
+        raw_desc = fields.get("description", "")
+        if isinstance(raw_desc, dict):
+            desc = self._extract_adf_text(raw_desc).strip()
+        else:
+            desc = str(raw_desc or "").strip()
 
         return {
             "key": data.get("key"),
