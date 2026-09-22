@@ -272,3 +272,46 @@ When the QA / Testing Engineer issues a `FAIL_REVISE` verdict, defects are route
 ### Remediation Safeguards:
 - **Maximum Remediation Cycles**: The remediation loop is bounded by a configurable cycle limit (default: 3 iterations). Exceeding this limit triggers an immediate escalation halt (`ESCALATION_HALT`).
 - **Defect Ticket Integrity**: Each defect ticket must include `issue_id`, `severity` (`BLOCKER`, `CRITICAL`, `MAJOR`, `MINOR`), `target_role_for_remediation`, `upstream_artifact_ref` (referencing `PRD-[ID]`, `COMP-SPEC-[ID]`, `ADR-[ID]`, or `Source File:Line`), `reproduction_steps` (ordered array of strings), `expected` result, and `actual` result.
+
+---
+
+## 4. Human-in-the-Loop (HITL) 2-Stage Ticket Lifecycle Protocol
+
+To eliminate prompt clutter and prevent premature implementation code before human alignment, all agents adhere to a strict **Two-Stage Human-in-the-Loop Gate**:
+
+```
+[User Trigger: "Refina <TICKET_KEY>" / "Analiza <TICKET_KEY>"]
+  │
+  ▼
+Stage 1: PO & Architecture Refinement (No Code Written)
+  ├─ 1. Ingest Jira ticket: `python scripts/atlassian_bridge.py fetch <TICKET_KEY> --scaffold-openspec`
+  ├─ 2. Product Owner & Architect formulate OpenSpec proposal:
+  │      - Structured Given/When/Then Acceptance Criteria
+  │      - Technical design & Data/Payload Contract (e.g. FCM schema, API DTOs)
+  ├─ 3. Publish refinement to Jira:
+  │      `python scripts/atlassian_bridge.py refine <TICKET_KEY> openspec/changes/<TICKET_KEY>/proposal.md --status "In Review"`
+  │      (or post structured proposal as a comment via `comment`)
+  └─ 4. MANDATORY HALT & AWAIT APPROVAL:
+         The agent presents the proposal summary in chat and STOPS without writing production code.
+
+[User Trigger: "Aprobado" / "Implementa <TICKET_KEY>"]
+  │
+  ▼
+Stage 2: Implementation & Independent Verification
+  ├─ 1. Move ticket to execution: `python scripts/atlassian_bridge.py transition <TICKET_KEY> "En curso"`
+  ├─ 2. Senior Developer writes production code strictly conforming to approved OpenSpec proposal.
+  ├─ 3. QA Engineer executes 100% test verification (unit, UI, integration).
+  ├─ 4. Quality Gate passes: `python scripts/openspec_cli.py archive <TICKET_KEY>`
+  ├─ 5. Post completion report in Jira: `python scripts/atlassian_bridge.py comment <TICKET_KEY> "<Summary>"`
+  └─ 6. Close ticket in Jira: `python scripts/atlassian_bridge.py transition <TICKET_KEY> "Listo"`
+```
+
+### Key Operational Rules:
+1. **Minimalist Conversational Triggers**:
+   - The user only needs to provide simple, 1-line commands: `"Refina KILOMENOS-4"` for Stage 1, and `"Aprobado"` for Stage 2.
+   - Long, prescriptive instructional prompts are completely discouraged; agents autonomously execute the lifecycle steps.
+2. **Zero Code Before Stage 1 Sign-Off**:
+   - Under NO circumstances may an agent create, edit, or delete production application files during Stage 1.
+   - Stage 1 outputs are strictly limited to Jira updates (`refine`/`comment`) and OpenSpec markdown artifacts (`proposal.md`, `design.md`, `specs/delta_spec.md`).
+3. **Audit Trail Synchronization**:
+   - Every human decision and approved specification is mirrored directly into the team's Jira ticket for full transparency across both human developers and autonomous agents.
