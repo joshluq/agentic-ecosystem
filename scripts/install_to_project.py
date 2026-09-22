@@ -122,6 +122,9 @@ def install_ecosystem(target_dir: Path, mode: str = 'both', profile: str = 'andr
         skills_src = source_root / 'skills'
         print(f"\n[1] Installing filtered skills for profile '{profile}'...")
         copy_dir(skills_src, skills_dst, overwrite, filter_names=allowed_skills)
+        agents_skills_dst = target_dir / '.agents' / 'skills'
+        if agents_skills_dst.parent.exists():
+            copy_dir(skills_src, agents_skills_dst, overwrite, filter_names=allowed_skills)
         installed = [p.name for p in skills_dst.iterdir() if p.is_dir()]
         print(f"    -> Installed {len(installed)} skills: {', '.join(sorted(installed))}")
 
