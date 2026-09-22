@@ -163,10 +163,11 @@ This document defines the specialized agent roles, boundary contracts, operation
   3. Validate UI layout hierarchy and semantics tree using `android layout` CLI dumps or Compose test node assertions (`assertIsDisplayed`, `assertContentDescriptionEquals`).
   4. Verify accessibility compliance (screen reader content descriptions, touch targets >= 48x48dp).
   5. Compute test coverage and execute edge-case / boundary-value tests.
-  6. Generate comprehensive QA Report (`QA-REPORT-<feature_id>.md`) and issue formal quality gate verdict:
-     - `PASS`: All ACs verified, zero test failures, zero blocker/critical issues.
+  6. Execute full app compilation verification (`./gradlew :app:assembleDevDebug`) as a mandatory pre-condition for release gating.
+  7. Generate comprehensive QA Report (`QA-REPORT-<feature_id>.md`) and issue formal quality gate verdict:
+     - `PASS`: All ACs verified, zero test failures, zero blocker/critical issues, and `:app:assembleDevDebug` passes cleanly.
      - `FAIL_REVISE`: One or more ACs failed or unverified, or defects detected.
-  7. On `FAIL_REVISE`, author structured defect tickets in `qa_verdict_handoff.json` with reproduction steps, expected vs actual behavior, severity, and assigned `target_role_for_remediation`.
+  8. On `FAIL_REVISE`, author structured defect tickets in `qa_verdict_handoff.json` with reproduction steps, expected vs actual behavior, severity, and assigned `target_role_for_remediation`.
 - **Strict Prohibitions (Negative Constraints)**:
   - **NEVER** modify production implementation code to force tests to pass.
   - **NEVER** issue a `PASS` verdict if any Acceptance Criterion is unverified, failing, or skipped.
@@ -350,3 +351,86 @@ Stage 2: Implementation & Independent Verification
    - Stage 1 outputs are strictly limited to Jira updates (`refine`/`comment`) and OpenSpec markdown artifacts (`proposal.md`, `design.md`, `specs/delta_spec.md`).
 3. **Audit Trail Synchronization**:
    - Every human decision and approved specification is mirrored directly into the team's Jira ticket for full transparency across both human developers and autonomous agents.
+
+---
+
+## 5. FoundationKit Architecture Reference (KiloMenos Core Guidelines)
+
+All modern Android modules in KiloMenos use `es.joshluq.foundationkit` as the architectural baseline for presentation and domain logic:
+
+### 5.1 Presentation Pattern: `ScreenViewModel<State, Event, Effect>`
+- **Package**: `es.joshluq.foundationkit.viewmodel.*`
+- **Interfaces**:
+  - `UiState`: Marker interface for immutable Compose UI state models.
+  - `UiEvent`: Marker interface for user actions and UI events dispatched to the ViewModel.
+  - `UiEffect`: Marker interface for one-off side effects (navigation, snackbars, toasts).
+- **ViewModel Implementation**:
+  ```kotlin
+  @HiltViewModel
+  class FeatureViewModel @Inject constructor(
+      private val myUseCase: MyUseCase,
+      private val logger: LoggerKit,
+      savedStateHandle: SavedStateHandle
+  ) : ScreenViewModel<FeatureState, FeatureEvent, FeatureEffect>() {
+
+      override fun createInitialState(): FeatureState = FeatureState.Empty
+
+      override fun handleEvent(event: FeatureEvent) {
+          when (event) {
+              is FeatureEvent.OnItemClicked -> {
+                  updateState { copy(isLoading = true) }
+                  launchEffect(FeatureEffect.NavigateToDetail(event.id))
+              }
+          }
+      }
+  }
+  ```
+- **Compose Route Integration**:
+  - Observe state via `val state by viewModel.state.collectAsStateWithLifecycle()`.
+  - Collect effects in a `LaunchedEffect(viewModel.effects) { viewModel.effects.collect { effect -> when(effect) { ... } } }`.
+  - Pass events via `viewModel.sendEvent(event)`.
+
+### 5.2 Domain Pattern: `UseCase` & `FlowUseCase`
+- **Package**: `es.joshluq.foundationkit.usecase.*`
+- **Suspended Single Operation (`UseCase<Input, Output>`)**:
+  ```kotlin
+  interface DoSomethingUseCase : UseCase<DoSomethingUseCase.Input, DoSomethingUseCase.Output> {
+      data class Input(val param: String) : UseCaseInput
+      sealed interface Output : UseCaseOutput {
+          data class Success(val data: String) : Output
+      }
+  }
+
+  class DoSomethingUseCaseImpl @Inject constructor(
+      private val repository: Repository
+  ) : DoSomethingUseCase {
+      override suspend fun invoke(input: DoSomethingUseCase.Input): Result<DoSomethingUseCase.Output> {
+          return runCatching {
+              repository.execute(input.param)
+              DoSomethingUseCase.Output.Success("Done")
+          }
+      }
+  }
+  ```
+- **Reactive Stream (`FlowUseCase<Input, Output>`)**:
+  ```kotlin
+  interface ObserveSomethingUseCase : FlowUseCase<ObserveSomethingUseCase.Input, ObserveSomethingUseCase.Output> {
+      data class Input(val filter: String? = null) : UseCaseInput
+      sealed interface Output : UseCaseOutput {
+          data class Success(val items: List<Item>) : Output
+      }
+  }
+
+  class ObserveSomethingUseCaseImpl @Inject constructor(
+      private val repository: Repository
+  ) : ObserveSomethingUseCase {
+      override fun invoke(input: ObserveSomethingUseCase.Input): Flow<ObserveSomethingUseCase.Output> {
+          return repository.observe(input.filter).map { 
+              ObserveSomethingUseCase.Output.Success(it) 
+          }
+      }
+  }
+  ```
+- **Dependency Injection Mandate**:
+  - Every domain usecase implementation **MUST** be bound in `:core:infrastructure` `UseCaseModule.kt` via:
+    `@Binds abstract fun bindDoSomethingUseCase(impl: DoSomethingUseCaseImpl): DoSomethingUseCase`
