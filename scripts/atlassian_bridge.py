@@ -45,6 +45,7 @@ class AtlassianClient:
         api_token: Optional[str] = None,
         project_key: Optional[str] = None,
         board_id: Optional[str] = None,
+        label: Optional[str] = None,
         confluence_space: Optional[str] = None,
         simulate: bool = False,
     ):
@@ -54,6 +55,7 @@ class AtlassianClient:
         self.api_token = api_token or os.environ.get("ATLASSIAN_API_TOKEN", "")
         self.project_key = project_key or os.environ.get("JIRA_PROJECT_KEY")
         self.board_id = board_id or os.environ.get("JIRA_BOARD_ID")
+        self.label = label or os.environ.get("JIRA_LABEL")
         self.confluence_space = confluence_space or os.environ.get("CONFLUENCE_SPACE")
 
         # Try reading local config file if credentials are empty
@@ -71,6 +73,8 @@ class AtlassianClient:
                     self.project_key = cfg.get("project_key")
                 if not self.board_id:
                     self.board_id = str(cfg.get("board_id")) if cfg.get("board_id") else None
+                if not self.label:
+                    self.label = cfg.get("label")
                 if not self.confluence_space:
                     self.confluence_space = cfg.get("confluence_space")
             except Exception:
@@ -145,29 +149,38 @@ class AtlassianClient:
         board_id: Optional[str] = None,
         status: Optional[str] = None,
         project_key: Optional[str] = None,
+        label: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
-        """Queries tickets from a specific Jira Agile Kanban/Scrum Board with optional status and project filtering."""
+        """Queries tickets from a specific Jira Agile Kanban/Scrum Board with optional status, project, and label filtering."""
         target_board = board_id or self.board_id
         pkey = project_key or self.project_key
+        tlabel = label or self.label
         if not target_board and not self.simulate:
             raise ValueError("No Board ID specified. Provide --board-id or set JIRA_BOARD_ID.")
 
         if self.simulate:
             prefix = pkey or "KMSAFE"
             sample_issues = [
-                {"key": f"{prefix}-101", "summary": "Setup Bluetooth tracking receiver", "status": "Ready for Dev", "priority": "High"},
-                {"key": f"{prefix}-102", "summary": "CanvasKit Button styling alignment", "status": "In Progress", "priority": "Medium"},
-                {"key": f"{prefix}-103", "summary": "Export PDF expenses report", "status": "Ready for Dev", "priority": "High"},
-                {"key": f"{prefix}-104", "summary": "Station historical price graphs", "status": "Backlog", "priority": "Low"},
+                {"key": f"{prefix}-101", "summary": "Setup Bluetooth tracking receiver", "status": "Ready for Dev", "priority": "High", "labels": ["android"]},
+                {"key": f"{prefix}-102", "summary": "CanvasKit Button styling alignment", "status": "In Progress", "priority": "Medium", "labels": ["android"]},
+                {"key": f"{prefix}-103", "summary": "Export PDF expenses report", "status": "Ready for Dev", "priority": "High", "labels": ["android"]},
+                {"key": f"{prefix}-104", "summary": "Station historical price graphs", "status": "Backlog", "priority": "Low", "labels": ["android"]},
+                {"key": f"{prefix}-201", "summary": "Setup Supabase vehicle_contracts table and RLS", "status": "Ready for Dev", "priority": "High", "labels": ["backend"]},
+                {"key": f"{prefix}-301", "summary": "Publish Legal Terms and Conditions HTML", "status": "Ready for Dev", "priority": "Medium", "labels": ["web"]},
             ]
+            res = sample_issues
+            if tlabel and tlabel.upper() not in ("ALL", "ANY"):
+                res = [i for i in res if tlabel.lower() in [l.lower() for l in i.get("labels", [])]]
             if status:
-                return [i for i in sample_issues if i["status"].lower() == status.lower()]
-            return sample_issues
+                res = [i for i in res if i["status"].lower() == status.lower()]
+            return res
 
         endpoint = f"rest/agile/1.0/board/{target_board}/issue"
         jql_parts = []
         if pkey:
             jql_parts.append(f"project = '{pkey}'")
+        if tlabel and tlabel.upper() not in ("ALL", "ANY"):
+            jql_parts.append(f"labels = '{tlabel}'")
         if status:
             jql_parts.append(f"status = '{status}'")
         if jql_parts:
@@ -487,12 +500,15 @@ def cmd_board(
     board_id: Optional[str] = None,
     status: Optional[str] = None,
     project_key: Optional[str] = None,
+    label: Optional[str] = None,
 ):
     target = board_id or client.board_id or "Default Board"
     pkey = project_key or client.project_key or "ALL"
-    print(f"[*] Querying Kanban/Scrum Board '{target}' (Project: {pkey}, Status filter: {status or 'ALL'})...")
+    tlabel = label or client.label
+    label_info = f", Label: '{tlabel}'" if tlabel else ""
+    print(f"[*] Querying Kanban/Scrum Board '{target}' (Project: {pkey}{label_info}, Status filter: {status or 'ALL'})...")
     try:
-        issues = client.get_board_issues(board_id=board_id, status=status, project_key=project_key)
+        issues = client.get_board_issues(board_id=board_id, status=status, project_key=project_key, label=tlabel)
         print("===========================================================")
         print(f"   KANBAN BOARD ISSUES ({len(issues)})")
         print("===========================================================")
@@ -581,6 +597,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--token", help="Atlassian API Token")
     parser.add_argument("--project-key", help="Jira Project Key (e.g. KMSAFE, FLEET)")
     parser.add_argument("--board-id", help="Jira Agile Board ID for Kanban/Scrum filtering")
+    parser.add_argument("--label", help="Jira Label filter (e.g. android, backend, web)")
     parser.add_argument("--space", help="Confluence Space Key")
     parser.add_argument("--simulate", action="store_true", help="Run in mock/simulation mode without live credentials.")
 
@@ -593,6 +610,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_board = subparsers.add_parser("board", help="List tickets from a specific Jira Agile Kanban/Scrum board.")
     p_board.add_argument("--board-id", help="Jira Agile Board ID (defaults to configured board)")
     p_board.add_argument("--project-key", help="Jira Project Key (e.g. KMSAFE, FLEET)")
+    p_board.add_argument("--label", help="Filter by Jira Label (e.g. android, backend, web)")
     p_board.add_argument("--status", help="Filter by column/status (e.g. 'Ready for Dev', 'In Progress')")
 
     # fetch
@@ -643,6 +661,7 @@ def main():
         api_token=args.token,
         project_key=args.project_key,
         board_id=args.board_id,
+        label=getattr(args, "label", None),
         confluence_space=args.space,
         simulate=args.simulate,
     )
@@ -650,7 +669,7 @@ def main():
     if args.command == "check":
         cmd_check(client)
     elif args.command == "board":
-        cmd_board(client, board_id=args.board_id, status=args.status, project_key=args.project_key)
+        cmd_board(client, board_id=args.board_id, status=args.status, project_key=args.project_key, label=getattr(args, "label", None))
     elif args.command == "fetch":
         cmd_fetch(client, args.issue_key, scaffold_openspec=args.scaffold_openspec, require_status=args.require_status)
     elif args.command == "refine":

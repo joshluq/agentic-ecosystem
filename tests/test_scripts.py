@@ -445,8 +445,8 @@ Acceptance Criteria:
             config_ex = backend_target / ".atlassian_config.json.example"
             self.assertTrue(config_ex.exists())
             config_json = json.loads(config_ex.read_text(encoding="utf-8"))
-            self.assertEqual(config_json["board_id"], "2")
-            self.assertEqual(config_json["component"], "Backend")
+            self.assertEqual(config_json["board_id"], "1")
+            self.assertEqual(config_json["label"], "backend")
 
             # Test Web profile
             web_target = tmp_root / "web"

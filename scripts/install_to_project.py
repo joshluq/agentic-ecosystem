@@ -58,10 +58,10 @@ PROFILE_SKILLS = {
 }
 
 PROFILE_CONFIG_DEFAULTS = {
-    'android': {"board_id": "1", "component": "Android"},
-    'backend': {"board_id": "2", "component": "Backend"},
-    'web': {"board_id": "3", "component": "Web"},
-    'all': {"board_id": "1", "component": "All"},
+    'android': {"board_id": "1", "label": "android"},
+    'backend': {"board_id": "1", "label": "backend"},
+    'web': {"board_id": "1", "label": "web"},
+    'all': {"board_id": "1", "label": ""},
 }
 
 
@@ -91,7 +91,7 @@ def generate_profile_config(target_dir: Path, profile: str):
         "api_token": "PASTE_YOUR_API_TOKEN_HERE",
         "project_key": "KILOMENOS",
         "board_id": meta["board_id"],
-        "component": meta["component"],
+        "label": meta["label"],
         "confluence_space": "KILOMENOS"
     }
     config_file.write_text(json.dumps(config_data, indent=2) + "\n", encoding="utf-8")
