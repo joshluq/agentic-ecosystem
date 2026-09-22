@@ -69,6 +69,10 @@ class TestHelperScripts(unittest.TestCase):
             "atlassian_bridge",
             PROJECT_ROOT / "scripts" / "atlassian_bridge.py",
         )
+        cls.install_to_project = load_module(
+            "install_to_project",
+            PROJECT_ROOT / "scripts" / "install_to_project.py",
+        )
 
     # 1. device_runner.py tests
     def test_device_runner_parser_and_env(self):
@@ -419,6 +423,43 @@ Acceptance Criteria:
         self.assertEqual(page["space"], "DEV")
         self.assertEqual(page["id"], "20001")
 
+    # 12. install_to_project.py Hub & Spoke Profiles tests
+    def test_install_to_project_profiles(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_root = Path(tmp_dir)
+
+            # Test Backend profile
+            backend_target = tmp_root / "backend"
+            backend_target.mkdir()
+            self.install_to_project.install_ecosystem(backend_target, profile="backend", mode="both")
+
+            skills_installed = [p.name for p in (backend_target / ".gemini" / "antigravity" / "skills").iterdir() if p.is_dir()]
+            self.assertIn("supabase-db-triage", skills_installed)
+            self.assertIn("supabase-edge-functions", skills_installed)
+            self.assertIn("openspec", skills_installed)
+            self.assertIn("atlassian-bridge", skills_installed)
+            self.assertNotIn("android-staff-engineer-compose", skills_installed)
+            self.assertNotIn("legal-compliance-audit", skills_installed)
+
+            # Verify profile config
+            config_ex = backend_target / ".atlassian_config.json.example"
+            self.assertTrue(config_ex.exists())
+            config_json = json.loads(config_ex.read_text(encoding="utf-8"))
+            self.assertEqual(config_json["board_id"], "2")
+            self.assertEqual(config_json["component"], "Backend")
+
+            # Test Web profile
+            web_target = tmp_root / "web"
+            web_target.mkdir()
+            self.install_to_project.install_ecosystem(web_target, profile="web", mode="both")
+
+            web_skills = [p.name for p in (web_target / ".gemini" / "antigravity" / "skills").iterdir() if p.is_dir()]
+            self.assertIn("legal-compliance-audit", web_skills)
+            self.assertIn("web-lighthouse-seo", web_skills)
+            self.assertNotIn("supabase-db-triage", web_skills)
+            self.assertNotIn("android-device", web_skills)
+
 
 if __name__ == "__main__":
     unittest.main()
+
