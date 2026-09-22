@@ -98,7 +98,7 @@ def generate_profile_config(target_dir: Path, profile: str):
     print(f"    -> Generated {config_file.name} for profile '{profile}'.")
 
 
-def install_ecosystem(target_dir: Path, mode: str = 'both', profile: str = 'android', overwrite: bool = True):
+def install_ecosystem(target_dir: Path, mode: str = 'both', profile: str = 'android', overwrite: bool = True, update_agents: bool = False):
     source_root = Path(__file__).resolve().parent.parent
     target_dir = target_dir.resolve()
 
@@ -133,15 +133,25 @@ def install_ecosystem(target_dir: Path, mode: str = 'both', profile: str = 'andr
             print(f"\n[2] Installing {folder} to {dst_f}...")
             copy_dir(src_f, dst_f, overwrite)
 
-        # Copy AGENTS.md and PROJECT.md ONLY if not already existing
-        for doc in ('AGENTS.md', 'PROJECT.md'):
-            doc_src = source_root / doc
-            doc_dst = target_dir / doc
-            if doc_src.exists() and not doc_dst.exists():
-                print(f"    -> Copying {doc} to target root...")
-                shutil.copy2(doc_src, doc_dst)
-            elif doc_dst.exists():
-                print(f"    -> Target already has {doc}, preserving existing file.")
+        # Copy PROJECT.md ONLY if not already existing (preserve project-specific configuration)
+        proj_src = source_root / 'PROJECT.md'
+        proj_dst = target_dir / 'PROJECT.md'
+        if proj_src.exists() and not proj_dst.exists():
+            print(f"    -> Copying PROJECT.md to target root...")
+            shutil.copy2(proj_src, proj_dst)
+        elif proj_dst.exists():
+            print(f"    -> Target already has PROJECT.md, preserving existing file.")
+
+        # Copy or update AGENTS.md
+        agents_src = source_root / 'AGENTS.md'
+        agents_dst = target_dir / 'AGENTS.md'
+        if agents_src.exists():
+            if not agents_dst.exists() or update_agents:
+                action_str = "Updating" if agents_dst.exists() else "Copying"
+                print(f"    -> {action_str} AGENTS.md in target root...")
+                shutil.copy2(agents_src, agents_dst)
+            else:
+                print(f"    -> Target already has AGENTS.md, preserving existing file (pass --update-agents to refresh).")
 
         # Copy core scripts & tests
         scripts_dst = target_dir / 'scripts'
@@ -169,10 +179,11 @@ def main():
     parser.add_argument("--mode", "-m", choices=['antigravity', 'standalone', 'both'], default='both',
                         help="Installation mode: 'antigravity', 'standalone', or 'both' (default: both)")
     parser.add_argument("--no-overwrite", action='store_true', help="Do not overwrite existing files")
+    parser.add_argument("--update-agents", action='store_true', help="Overwrite AGENTS.md with the latest ecosystem role specifications")
 
     args = parser.parse_args()
     target_path = Path(args.target)
-    install_ecosystem(target_path, mode=args.mode, profile=args.profile, overwrite=not args.no_overwrite)
+    install_ecosystem(target_path, mode=args.mode, profile=args.profile, overwrite=not args.no_overwrite, update_agents=args.update_agents)
 
 
 if __name__ == '__main__':
