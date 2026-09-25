@@ -108,6 +108,8 @@ def install_ecosystem(target_dir: Path, mode: str = 'both', profile: str = 'andr
 
     allowed_skills = PROFILE_SKILLS.get(profile)
 
+    profile_dir = source_root / 'profiles' / profile
+
     print("===========================================================")
     print("   Hub & Spoke Agentic Ecosystem Deployer")
     print(f"   Source  : {source_root}")
@@ -130,28 +132,54 @@ def install_ecosystem(target_dir: Path, mode: str = 'both', profile: str = 'andr
 
     # 2. Install SDD Contracts, Schemas, Templates, Walkthrough & OpenSpec
     if mode in ('standalone', 'both'):
-        for folder in ('schemas', 'templates', 'walkthrough', 'openspec'):
+        # Universal Schemas & Walkthrough
+        for folder in ('schemas', 'walkthrough'):
             src_f = source_root / folder
             dst_f = target_dir / folder
             print(f"\n[2] Installing {folder} to {dst_f}...")
             copy_dir(src_f, dst_f, overwrite)
 
+        # Templates: Profile-tailored or base
+        tmpl_dst = target_dir / 'templates'
+        if profile_dir.is_dir() and (profile_dir / 'templates').is_dir():
+            tmpl_src = profile_dir / 'templates'
+            print(f"\n[2] Installing profile-tailored templates ({profile}) to {tmpl_dst}...")
+            copy_dir(tmpl_src, tmpl_dst, overwrite)
+        else:
+            tmpl_src = source_root / 'templates'
+            print(f"\n[2] Installing templates to {tmpl_dst}...")
+            copy_dir(tmpl_src, tmpl_dst, overwrite)
+
+        # OpenSpec: Universal contracts + Profile-tailored specs
+        openspec_dst = target_dir / 'openspec'
+        print(f"\n[2] Installing openspec structure to {openspec_dst}...")
+        (openspec_dst / 'changes').mkdir(parents=True, exist_ok=True)
+        (openspec_dst / 'archive').mkdir(parents=True, exist_ok=True)
+        contracts_src = source_root / 'openspec' / 'specs' / 'contracts'
+        if contracts_src.is_dir():
+            copy_dir(contracts_src, openspec_dst / 'specs' / 'contracts', overwrite)
+        if profile_dir.is_dir() and (profile_dir / 'openspec' / 'specs').is_dir():
+            print(f"    -> Installing profile living specs from profiles/{profile}/openspec/specs...")
+            copy_dir(profile_dir / 'openspec' / 'specs', openspec_dst / 'specs', overwrite)
+        else:
+            copy_dir(source_root / 'openspec' / 'specs', openspec_dst / 'specs', overwrite)
+
         # Copy PROJECT.md ONLY if not already existing (preserve project-specific configuration)
-        proj_src = source_root / 'PROJECT.md'
         proj_dst = target_dir / 'PROJECT.md'
+        proj_src = profile_dir / 'PROJECT.md' if (profile_dir.is_dir() and (profile_dir / 'PROJECT.md').is_file()) else source_root / 'PROJECT.md'
         if proj_src.exists() and not proj_dst.exists():
-            print(f"    -> Copying PROJECT.md to target root...")
+            print(f"    -> Copying profile PROJECT.md to target root...")
             shutil.copy2(proj_src, proj_dst)
         elif proj_dst.exists():
             print(f"    -> Target already has PROJECT.md, preserving existing file.")
 
-        # Copy or update AGENTS.md
-        agents_src = source_root / 'AGENTS.md'
+        # Copy or update AGENTS.md (Profile-specific if available)
         agents_dst = target_dir / 'AGENTS.md'
+        agents_src = profile_dir / 'AGENTS.md' if (profile_dir.is_dir() and (profile_dir / 'AGENTS.md').is_file()) else source_root / 'AGENTS.md'
         if agents_src.exists():
             if not agents_dst.exists() or update_agents:
                 action_str = "Updating" if agents_dst.exists() else "Copying"
-                print(f"    -> {action_str} AGENTS.md in target root...")
+                print(f"    -> {action_str} AGENTS.md ({profile}) in target root...")
                 shutil.copy2(agents_src, agents_dst)
             else:
                 print(f"    -> Target already has AGENTS.md, preserving existing file (pass --update-agents to refresh).")
@@ -160,6 +188,9 @@ def install_ecosystem(target_dir: Path, mode: str = 'both', profile: str = 'andr
         scripts_dst = target_dir / 'scripts'
         scripts_src = source_root / 'scripts'
         copy_dir(scripts_src, scripts_dst, overwrite)
+        if profile_dir.is_dir() and (profile_dir / 'scripts').is_dir():
+            print(f"    -> Installing profile-specific scripts ({profile}) to {scripts_dst}...")
+            copy_dir(profile_dir / 'scripts', scripts_dst, overwrite)
 
         tests_dst = target_dir / 'tests'
         tests_src = source_root / 'tests'

@@ -448,6 +448,13 @@ Acceptance Criteria:
             self.assertEqual(config_json["board_id"], "1")
             self.assertEqual(config_json["label"], "backend")
 
+            # Verify profile-tailored AGENTS.md, templates, and scripts
+            backend_agents = (backend_target / "AGENTS.md").read_text(encoding="utf-8")
+            self.assertIn("Backend Software Architect", backend_agents)
+            self.assertNotIn("Role 3: Mobile Software Architect", backend_agents)
+            self.assertTrue((backend_target / "scripts" / "supabase_deployer.py").is_file())
+            self.assertTrue((backend_target / "openspec" / "specs" / "architecture" / "backend_layered_architecture.md").is_file())
+
             # Test Web profile
             web_target = tmp_root / "web"
             web_target.mkdir()
@@ -458,6 +465,11 @@ Acceptance Criteria:
             self.assertIn("web-lighthouse-seo", web_skills)
             self.assertNotIn("supabase-db-triage", web_skills)
             self.assertNotIn("android-device", web_skills)
+
+            web_agents = (web_target / "AGENTS.md").read_text(encoding="utf-8")
+            self.assertIn("Web Software Architect", web_agents)
+            self.assertNotIn("Backend Software Architect", web_agents)
+            self.assertTrue((web_target / "openspec" / "specs" / "architecture" / "web_ssg_architecture.md").is_file())
 
 
 if __name__ == "__main__":
