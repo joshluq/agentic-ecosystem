@@ -433,6 +433,9 @@ Acceptance Criteria:
 
     # 12. install_to_project.py Hub & Spoke Profiles tests
     def test_install_to_project_profiles(self):
+        if not (PROJECT_ROOT / "profiles").is_dir():
+            self.skipTest("Hub-and-spoke multi-profile installation requires hub repository with profiles/ directory.")
+
         with tempfile.TemporaryDirectory() as tmp_dir:
             tmp_root = Path(tmp_dir)
 
