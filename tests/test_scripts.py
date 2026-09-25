@@ -77,6 +77,10 @@ class TestHelperScripts(unittest.TestCase):
             "workflow",
             PROJECT_ROOT / "scripts" / "workflow.py",
         )
+        cls.backend_sanity_check = load_module(
+            "backend_sanity_check",
+            PROJECT_ROOT / "scripts" / "backend_sanity_check.py",
+        )
 
     # 1. device_runner.py tests
     def test_device_runner_parser_and_env(self):
@@ -594,8 +598,118 @@ Acceptance Criteria:
             for f in (self.workflow.ROOT_DIR / "handoffs").glob(f"*{change_id}*"):
                 f.unlink(missing_ok=True)
 
+    def test_sanity_check_inner_loop(self):
+        """Tests Android sanity_check.py with target_module and fast inner-loop mode."""
+        from unittest.mock import patch
+
+        # Mock run_gradle_task to simulate fast execution
+        with patch.object(self.sanity_check, "run_gradle_task", return_value=(True, 450, "BUILD SUCCESSFUL")):
+            res = self.sanity_check.execute_live_sanity_check(
+                Path("app"),
+                target_module=":feature:profile",
+                fast=True
+            )
+            self.assertTrue(res["can_handoff_to_qa"])
+            self.assertTrue(res["compilation_clean"])
+            self.assertTrue(res["ktlint_clean"])
+            self.assertTrue(res["lint_clean"])
+            self.assertTrue(res["metrics"]["fast_mode"])
+            self.assertEqual(res["metrics"]["target_module"], ":feature:profile")
+
+    def test_backend_sanity_check_suite(self):
+        """Tests backend_sanity_check.py: migration audit, mock handoff, and schema compliance."""
+        # 1. Test sample payload schema validation
+        sample = self.backend_sanity_check.generate_sample_dev_handoff("FEAT-009")
+        schema_path = PROJECT_ROOT / "schemas" / "dev_to_qa_handoff.schema.json"
+        schema = json.loads(schema_path.read_text(encoding="utf-8"))
+        self.workflow.validate_schema(sample, schema)
+        self.assertEqual(sample["sender"]["role"], "Senior Backend Developer")
+        self.assertEqual(sample["recipient"]["role"], "Backend QA Engineer")
+
+        # 2. Test migration auditing with temp directory
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            mig_dir = tmp_path / "supabase" / "migrations"
+            mig_dir.mkdir(parents=True)
+
+            # Insecure migration (CREATE TABLE without RLS)
+            insecure_sql = mig_dir / "20260901_insecure.sql"
+            insecure_sql.write_text("CREATE TABLE public.unprotected_items (id uuid primary key);", encoding="utf-8")
+            audit1 = self.backend_sanity_check.audit_supabase_migrations(tmp_path)
+            self.assertFalse(audit1["passed"])
+            self.assertTrue(any("unprotected_items" in v for v in audit1["violations"]))
+
+            # Add RLS and policy
+            secure_sql = mig_dir / "20260902_secure.sql"
+            secure_sql.write_text("""
+            ALTER TABLE public.unprotected_items ENABLE ROW LEVEL SECURITY;
+            CREATE POLICY "Users can access own items" ON public.unprotected_items
+                FOR ALL USING (auth.uid() = user_id);
+            """, encoding="utf-8")
+            audit2 = self.backend_sanity_check.audit_supabase_migrations(tmp_path)
+            self.assertTrue(audit2["passed"])
+
+            # Test secret leakage detection
+            leak_sql = mig_dir / "20260903_leak.sql"
+            leak_sql.write_text("SUPABASE_SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.secretkeyhere12345';", encoding="utf-8")
+            audit3 = self.backend_sanity_check.audit_supabase_migrations(tmp_path)
+            self.assertFalse(audit3["passed"])
+            self.assertTrue(any("Security Violation" in v for v in audit3["violations"]))
+
+    def test_workflow_approval_gate(self):
+        """Tests workflow.py approve command and build --check-approval gate."""
+        change_id = "TEST-APPROVAL-01"
+        try:
+            # Phase 1: Plan
+            self.workflow.cmd_workflow_plan(
+                change_id,
+                title="Test Approval Workflow",
+                profile="backend",
+                simulate=True,
+                no_jira=True
+            )
+            proposal_file = self.workflow.CHANGES_DIR / change_id / "proposal.md"
+            self.assertTrue(proposal_file.is_file())
+
+            # Initially unapproved: build with check_approval must fail
+            is_approved, reason = self.workflow.check_approval_status(proposal_file)
+            self.assertFalse(is_approved)
+
+            build_blocked = self.workflow.cmd_workflow_build(
+                change_id,
+                profile="backend",
+                simulate=True,
+                no_jira=True,
+                check_approval=True
+            )
+            self.assertFalse(build_blocked)
+
+            # Approve via command
+            approve_ok = self.workflow.cmd_workflow_approve(change_id, approver="PO Lead")
+            self.assertTrue(approve_ok)
+
+            # Now build with check_approval must pass
+            is_approved_after, _ = self.workflow.check_approval_status(proposal_file)
+            self.assertTrue(is_approved_after)
+
+            build_ok = self.workflow.cmd_workflow_build(
+                change_id,
+                profile="backend",
+                simulate=True,
+                no_jira=True,
+                check_approval=True
+            )
+            self.assertTrue(build_ok)
+
+        finally:
+            import shutil
+            shutil.rmtree(self.workflow.CHANGES_DIR / change_id, ignore_errors=True)
+            for f in (self.workflow.ROOT_DIR / "handoffs").glob(f"*{change_id}*"):
+                f.unlink(missing_ok=True)
+
 
 if __name__ == "__main__":
     unittest.main()
+
 
 

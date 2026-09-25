@@ -92,3 +92,34 @@ COMMIT;
 - [ ] Are updates guarded with both `USING` and `WITH CHECK` clauses?
 - [ ] Are sensitive audit tables (`audit_logs`) insert-only without update/delete policies?
 - [ ] Are functions declared with `SECURITY DEFINER` and explicit `SET search_path = public`?
+
+---
+
+## 4. Automated Verification Gate: `backend_sanity_check.py`
+
+The pre-handoff quality gate for Backend developers (`Senior Backend Developer` -> `Backend QA Engineer`).
+
+### Capabilities:
+1. **TypeScript Type Safety**: Executes `tsc --noEmit` to verify type soundness with 0 errors.
+2. **Automated Tests**: Runs `npm test` and enforces 0 failures and >= 1 passing test.
+3. **Database Security Audit**: Statically audits all PostgreSQL migrations in `supabase/migrations/*.sql`:
+   - Checks that all `CREATE TABLE` statements have paired `ALTER TABLE ... ENABLE ROW LEVEL SECURITY;`.
+   - Verifies tenant isolation in policies (`auth.uid() = user_id`).
+   - Scans for hardcoded service_role keys or secrets leakage.
+   - Verifies idempotency (`IF NOT EXISTS`) and transaction boundaries.
+
+### Usage:
+```bash
+# Full Backend Pre-Handoff Quality Gate
+python scripts/backend_sanity_check.py --project-dir ./ --feature-id FEAT-009 --output handoffs/dev_to_qa_FEAT-009.json
+
+# Statically Audit PostgreSQL Migrations Only
+python scripts/backend_sanity_check.py --project-dir ./ --audit-migrations-only
+
+# Generate Synthetic Compliant Sample Payload
+python scripts/backend_sanity_check.py --mock-sample --output handoffs/sample_backend_handoff.json
+
+# Audit Existing Handoff Payload
+python scripts/backend_sanity_check.py --dev-handoff handoffs/dev_to_qa_FEAT-009.json
+```
+
