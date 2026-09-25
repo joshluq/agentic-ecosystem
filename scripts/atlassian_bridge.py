@@ -463,7 +463,7 @@ def cmd_fetch(client: AtlassianClient, issue_key: str, scaffold_openspec: bool =
         sys.exit(1)
 
 
-def cmd_refine(client: AtlassianClient, issue_key: str, criteria_file_or_text: str, transition_to: Optional[str] = None):
+def cmd_refine(client: AtlassianClient, issue_key: str, criteria_file_or_text: str, transition_to: Optional[str] = None, as_comment: bool = False, overwrite_desc: bool = False):
     print(f"[*] PO Refinement: Updating Jira ticket {issue_key} with formal acceptance criteria...")
     try:
         # Check if input is a file path
@@ -473,8 +473,28 @@ def cmd_refine(client: AtlassianClient, issue_key: str, criteria_file_or_text: s
         else:
             new_desc = criteria_file_or_text
 
-        client.update_jira_issue(issue_key, description=new_desc)
-        print(f"✅ Issue {issue_key} description successfully updated with refined specifications.")
+        if as_comment:
+            comment_body = f"📋 **[REFINAMIENTO TÉCNICO - PO & ARQUITECTURA]**\n\n{new_desc}"
+            client.add_jira_comment(issue_key, comment_body)
+            print(f"✅ Refinement posted as structured comment on issue {issue_key}.")
+        elif overwrite_desc:
+            client.update_jira_issue(issue_key, description=new_desc)
+            print(f"✅ Issue {issue_key} description successfully replaced with refined specifications.")
+        else:
+            try:
+                issue_data = client.get_jira_issue(issue_key)
+                existing_desc = (issue_data.get("description") or "").strip()
+            except Exception:
+                existing_desc = ""
+
+            header_tag = "--- REFINAMIENTO TÉCNICO ---"
+            if existing_desc and header_tag not in existing_desc:
+                combined_desc = f"{existing_desc}\n\n---\n## 📋 {header_tag}\n\n{new_desc}"
+            else:
+                combined_desc = new_desc
+
+            client.update_jira_issue(issue_key, description=combined_desc)
+            print(f"✅ Issue {issue_key} description successfully updated with appended specifications.")
 
         if transition_to:
             print(f"[*] Moving issue to '{transition_to}'...")
@@ -483,6 +503,7 @@ def cmd_refine(client: AtlassianClient, issue_key: str, criteria_file_or_text: s
     except Exception as e:
         print(f"❌ Error refining issue: {e}")
         sys.exit(1)
+
 
 
 def cmd_transition(client: AtlassianClient, issue_key: str, status_name: str):
@@ -624,6 +645,8 @@ def build_parser() -> argparse.ArgumentParser:
     p_refine.add_argument("issue_key", help="Jira issue key (e.g. KMSAFE-105)")
     p_refine.add_argument("criteria", help="Path to markdown file or string containing refined Acceptance Criteria")
     p_refine.add_argument("--status", default="Refined", help="Status to transition issue after refinement (default: Refined)")
+    p_refine.add_argument("--as-comment", action="store_true", help="Post refinement as a comment instead of updating issue description")
+    p_refine.add_argument("--overwrite-desc", action="store_true", help="Overwrite the issue description completely rather than appending")
 
     # transition
     p_trans = subparsers.add_parser("transition", help="Transition Jira issue status.")
@@ -673,7 +696,7 @@ def main():
     elif args.command == "fetch":
         cmd_fetch(client, args.issue_key, scaffold_openspec=args.scaffold_openspec, require_status=args.require_status)
     elif args.command == "refine":
-        cmd_refine(client, args.issue_key, args.criteria, transition_to=args.status)
+        cmd_refine(client, args.issue_key, args.criteria, transition_to=args.status, as_comment=args.as_comment, overwrite_desc=args.overwrite_desc)
     elif args.command == "transition":
         cmd_transition(client, args.issue_key, args.target_status)
     elif args.command == "comment":

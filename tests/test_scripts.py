@@ -73,6 +73,10 @@ class TestHelperScripts(unittest.TestCase):
             "install_to_project",
             PROJECT_ROOT / "scripts" / "install_to_project.py",
         )
+        cls.workflow = load_module(
+            "workflow",
+            PROJECT_ROOT / "scripts" / "workflow.py",
+        )
 
     # 1. device_runner.py tests
     def test_device_runner_parser_and_env(self):
@@ -488,14 +492,110 @@ Acceptance Criteria:
             self.assertNotIn("Backend Software Architect", web_agents)
             self.assertTrue((web_target / "openspec" / "specs" / "architecture" / "web_ssg_architecture.md").is_file())
 
+            # Verify scripts installation includes workflow.py
+            self.assertTrue((backend_target / "scripts" / "workflow.py").is_file())
+
             # Verify .github/copilot_instructions.md for Web
             copilot_web = (web_target / ".github" / "copilot_instructions.md").read_text(encoding="utf-8")
             self.assertIn("Profile: WEB", copilot_web)
             self.assertIn("Astro", copilot_web)
             self.assertIn("HALT GATE", copilot_web)
 
+    # 13. workflow.py Unified 2-Phase Orchestrator tests
+    def test_workflow_orchestrator_lifecycle(self):
+        change_id = "TEST-WF-UNIT"
+        title = "Workflow Unit Test Feature"
+
+        # 1. Test Parser
+        parser = self.workflow.build_parser()
+        self.assertIsNotNone(parser)
+        help_text = parser.format_help()
+        self.assertIn("plan", help_text)
+        self.assertIn("build", help_text)
+        self.assertIn("verify", help_text)
+        self.assertIn("status", help_text)
+
+        try:
+            # 2. Test Phase 1: Plan
+            plan_success = self.workflow.cmd_workflow_plan(
+                change_id,
+                title=title,
+                profile="android",
+                simulate=True,
+                no_jira=True
+            )
+            self.assertTrue(plan_success)
+
+            change_dir = self.workflow.CHANGES_DIR / change_id
+            self.assertTrue(change_dir.is_dir())
+            self.assertTrue((change_dir / "proposal.md").is_file())
+            self.assertTrue((change_dir / "design.md").is_file())
+            self.assertTrue((change_dir / "tasks.md").is_file())
+
+            # Check derived handoffs exist
+            po_handoff = self.workflow.ROOT_DIR / "handoffs" / f"po_to_architect_{change_id}.json"
+            arch_handoff = self.workflow.ROOT_DIR / "handoffs" / f"architect_to_dev_{change_id}.json"
+            self.assertTrue(po_handoff.is_file())
+            self.assertTrue(arch_handoff.is_file())
+
+            # 3. Test Phase 2: Build Halt Gate (should fail with pending questions)
+            build_blocked = self.workflow.cmd_workflow_build(
+                change_id,
+                profile="android",
+                simulate=True,
+                no_jira=True
+            )
+            self.assertFalse(build_blocked)
+
+            # Resolve blocking question in proposal.md
+            proposal_file = change_dir / "proposal.md"
+            content = proposal_file.read_text(encoding="utf-8")
+            proposal_file.write_text(content.replace("- [ ]", "- [x]"), encoding="utf-8")
+
+            # Retry Phase 2: Build (should pass now)
+            build_success = self.workflow.cmd_workflow_build(
+                change_id,
+                profile="android",
+                simulate=True,
+                no_jira=True
+            )
+            self.assertTrue(build_success)
+
+            dev_handoff = self.workflow.ROOT_DIR / "handoffs" / f"dev_to_qa_{change_id}.json"
+            self.assertTrue(dev_handoff.is_file())
+
+            # 4. Test Phase 3: Verify (PASS)
+            verify_success = self.workflow.cmd_workflow_verify(
+                change_id,
+                verdict="PASS",
+                profile="android",
+                simulate=True,
+                no_jira=True
+            )
+            self.assertTrue(verify_success)
+
+            # Check QA report and verdict handoff
+            qa_report = self.workflow.ROOT_DIR / "docs" / "qa" / f"QA-REPORT-{change_id}.md"
+            qa_verdict = self.workflow.ROOT_DIR / "handoffs" / f"qa_verdict_{change_id}.json"
+            self.assertTrue(qa_report.is_file())
+            self.assertTrue(qa_verdict.is_file())
+
+            # Verify OpenSpec was archived
+            archive_dir = self.workflow.ARCHIVE_DIR / change_id
+            self.assertTrue(archive_dir.is_dir())
+
+        finally:
+            # Clean up test artifacts
+            import shutil
+            shutil.rmtree(self.workflow.CHANGES_DIR / change_id, ignore_errors=True)
+            shutil.rmtree(self.workflow.ARCHIVE_DIR / change_id, ignore_errors=True)
+            (self.workflow.SPECS_DIR / f"features_{change_id.lower().replace('-', '_')}.md").unlink(missing_ok=True)
+            (self.workflow.ROOT_DIR / "docs" / "qa" / f"QA-REPORT-{change_id}.md").unlink(missing_ok=True)
+            for f in (self.workflow.ROOT_DIR / "handoffs").glob(f"*{change_id}*"):
+                f.unlink(missing_ok=True)
 
 
 if __name__ == "__main__":
     unittest.main()
+
 
