@@ -22,3 +22,16 @@
 
 ## 3. Link Integrity Audit
 - All internal and external links return HTTP 200: `PASS`.
+
+## 4. Pre-Verdict Audit Checklist: Paridad Spec vs. Implementación
+
+Antes de emitir el veredicto final (`PASS`), el Web QA Engineer debe auditar de manera rigurosa:
+
+- [ ] **Paridad Funcional 1-a-1 (Anti-Scope Creep)**:
+  - Todo el contenido y páginas requeridas por la spec existen (`PASS`).
+  - **Zero Ghost Code**: Cero scripts adicionales de tracking no declarados, cero rutas no autorizadas (`PASS`).
+- [ ] **Cobertura de Consecuencias de Fallo (`BR-xx`)**:
+  - Formularios y enlaces erróneos muestran feedback accesible y estados 404 adecuados (`PASS`).
+- [ ] **Dudas Abiertas Resueltas**:
+  - Textos legales y requerimientos de compliance 100% aprobados antes del build (`PASS`).
+

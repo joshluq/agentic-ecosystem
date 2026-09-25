@@ -52,14 +52,30 @@ Automated verification of REST endpoints and Supabase PostgreSQL security guidel
 
 ---
 
-## 4. Structured Defect Tickets (Required for FAIL_REVISE)
+## 4. Pre-Verdict Audit Checklist: Paridad Spec vs. Implementación
+
+Antes de emitir el veredicto final (`PASS`), el Backend QA Engineer debe auditar de manera rigurosa:
+
+- [ ] **Paridad Funcional 1-a-1 (Anti-Scope Creep)**:
+  - Todas las capacidades descritas en la PRD / Spec están implementadas (`PASS`).
+  - **Zero Ghost Code**: No se han introducido endpoints, funciones Edge, parámetros o migraciones no especificados en el requerimiento (`PASS`).
+- [ ] **Cobertura de Consecuencias de Fallo (`BR-xx`)**:
+  - Cada regla de negocio (`BR-xx`) cuenta con al menos un test automatizado negativo que verifica su consecuencia ante fallos (HTTP 401/403/409, errores controlados de Edge Function) (`PASS`).
+- [ ] **Dudas Abiertas Resueltas**:
+  - Se confirmó que el 100% de las dudas de la PRD / Spec fueron marcadas como `RESUELTA` antes de la fase de construcción (`PASS`).
+- [ ] **Alineación Arquitectónica & Seguridad**:
+  - RLS activado en todas las tablas nuevas, migraciones dentro de transacciones atómicas, cero claves de servicio expuestas (`PASS`).
+
+---
+
+## 5. Structured Defect Tickets (Required for FAIL_REVISE)
 
 If the quality gate verdict is `FAIL_REVISE`, each failure must be formulated as a structured remediation ticket below:
 
 ### Defect 1: [Short Descriptive Title of Issue]
 - **Issue ID**: DEF-01
 - **Severity**: BLOCKER | CRITICAL | MAJOR | MINOR
-- **Target Role for Remediation**: Senior Android Developer | Software Architect | Product Owner
+- **Target Role for Remediation**: Senior Backend Developer | Backend Software Architect | Product Owner
 - **Upstream Artifact Ref**: `COMP-SPEC-[ID]` | `PRD-[ID]` | `Source File:Line`
 - **Reproduction Steps**:
   1. Initialize component in state X

@@ -27,6 +27,14 @@
 - **FR-02**: [Requirement Title] — The system shall [specific, unambiguous functional requirement statement].
 - **FR-03**: [Requirement Title] — The system shall [specific, unambiguous functional requirement statement].
 
+### 4.1 Reglas de Negocio con Consecuencia Explícita si Fallan (BR-xx)
+Toda regla de negocio backend debe definir inequívocamente su condición de activación y la consecuencia observable en caso de incumplimiento:
+
+| ID Regla | Enunciado de Regla | Condición de Fallo / Violación | Consecuencia en Sistema / HTTP Status / Error Code |
+|---|---|---|---|
+| **BR-01** | [Regla de negocio o idempotencia] | [UUID ya procesado o payload inválido] | [HTTP 409 Conflict o idempotencia ON CONFLICT UPDATE] |
+| **BR-02** | [Aislamiento Multi-tenant / Permisos] | [auth.uid() != user_id o rol insuficiente] | [HTTP 401 Unauthorized / HTTP 403 Forbidden] |
+
 ## 5. Acceptance Criteria (Given / When / Then)
 - **AC-01**: [Scenario Title — e.g., Successful initial load]
   - **Given** [initial system state / user context / authenticated session]
@@ -58,5 +66,13 @@
   - Google Play RTDN webhook processing with deduplication and < 200ms ACK.
   - Firebase Cloud Messaging (FCM HTTP v1) error handling with automatic pruning of invalid device tokens.
 
-## 7. Out of Scope
+## 7. Dudas Abiertas Bloqueantes (HITL Halt Gate)
+> [!IMPORTANT]
+> **GATE BLOQUEANTE**: Si existen dudas de producto, legales, de negocio o dependencias técnicas no resueltas en esta tabla, **QUEDA ESTRICTAMENTE PROHIBIDO AVANZAR A DISEÑO TÉCNICO O ESCRITURA DE CÓDIGO**. El Product Owner y los Stakeholders deben resolverlas antes de desbloquear la fase de Arquitectura e Implementación.
+
+| ID Duda | Pregunta / Ambigüedad Detectada | Impacto si no se resuelve | Propietario / Stakeholder | Estado (BLOQUEANTE / RESUELTA) | Decisión Final Acordada |
+|---|---|---|---|---|---|
+| D-01 | [Ej: ¿Cómo se maneja la revocación de suscripción en RTDN?] | Crítico: inconsistencia contable | Solutions Architect / PO | RESUELTA | [Detalle del comportamiento acordado] |
+
+## 8. Out of Scope
 - [Explicit list of capabilities, platforms, or variations deliberately excluded from this release]

@@ -23,6 +23,14 @@
   - **When** [the page loads]
   - **Then** [the complete text renders with semantic typography and zero layout shift]
 
+### 3.1 Reglas de Negocio con Consecuencia Explícita si Fallan (BR-xx)
+Toda regla de negocio web debe definir inequívocamente su condición de activación y la consecuencia observable en caso de incumplimiento:
+
+| ID Regla | Enunciado de Regla | Condición de Fallo / Violación | Consecuencia en Sistema / Feedback Visual / HTTP |
+|---|---|---|---|
+| **BR-01** | [Regla de contenido o formulario] | [Fallo de validación o campo mandatorio ausente] | [Mensaje de error accesible, foco en campo erróneo] |
+| **BR-02** | [Regla de enlace / redirección] | [Recurso inexistente o ruta rota] | [Página 404 estática optimizada con retorno a Home] |
+
 ## 4. Non-Functional Requirements (Web Standards)
 - **Lighthouse Performance Targets**:
   - Performance: >= 95
@@ -32,3 +40,14 @@
 - **Responsive Viewport Support**: 320px (mobile) to 2560px (ultra-wide desktop).
 - **Zero Client-Side JS Bloat**: Pure static HTML output for informational and legal content.
 - **GDPR & Store Compliance**: Clear account deletion instructions and request submission form.
+
+## 5. Dudas Abiertas Bloqueantes (HITL Halt Gate)
+> [!IMPORTANT]
+> **GATE BLOQUEANTE**: Si existen dudas de producto, legales, de negocio o dependencias técnicas no resueltas en esta tabla, **QUEDA ESTRICTAMENTE PROHIBIDO AVANZAR A DISEÑO TÉCNICO O ESCRITURA DE CÓDIGO**. El Product Owner y los Stakeholders deben resolverlas antes de desbloquear la fase de Arquitectura e Implementación.
+
+| ID Duda | Pregunta / Ambigüedad Detectada | Impacto si no se resuelve | Propietario / Stakeholder | Estado (BLOQUEANTE / RESUELTA) | Decisión Final Acordada |
+|---|---|---|---|---|---|
+| D-01 | [Ej: ¿Texto legal exacto aprobado por compliance?] | Crítico: riesgo regulatorio | Legal / Product Owner | RESUELTA | [Aprobado texto v1.2] |
+
+## 6. Out of Scope
+- [Explicit list of capabilities, platforms, or variations deliberately excluded from this release]

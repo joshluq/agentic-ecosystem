@@ -455,6 +455,23 @@ Acceptance Criteria:
             self.assertTrue((backend_target / "scripts" / "supabase_deployer.py").is_file())
             self.assertTrue((backend_target / "openspec" / "specs" / "architecture" / "backend_layered_architecture.md").is_file())
 
+            # Verify .github/copilot_instructions.md for Backend
+            copilot_backend = (backend_target / ".github" / "copilot_instructions.md").read_text(encoding="utf-8")
+            self.assertIn("Profile: BACKEND", copilot_backend)
+            self.assertIn("HALT GATE", copilot_backend)
+            self.assertIn("Zero Ghost Code", copilot_backend)
+            self.assertIn("Negative Testing for Business Rules (`BR-xx`)", copilot_backend)
+            self.assertIn("Supabase", copilot_backend)
+
+            # Verify PRD and QA templates contain new SDD sections
+            backend_prd = (backend_target / "templates" / "prd-template.md").read_text(encoding="utf-8")
+            self.assertIn("Reglas de Negocio con Consecuencia Explícita si Fallan (BR-xx)", backend_prd)
+            self.assertIn("Dudas Abiertas Bloqueantes (HITL Halt Gate)", backend_prd)
+
+            backend_qa = (backend_target / "templates" / "qa-report-template.md").read_text(encoding="utf-8")
+            self.assertIn("Pre-Verdict Audit Checklist: Paridad Spec vs. Implementación", backend_qa)
+            self.assertIn("Zero Ghost Code", backend_qa)
+
             # Test Web profile
             web_target = tmp_root / "web"
             web_target.mkdir()
@@ -470,6 +487,13 @@ Acceptance Criteria:
             self.assertIn("Web Software Architect", web_agents)
             self.assertNotIn("Backend Software Architect", web_agents)
             self.assertTrue((web_target / "openspec" / "specs" / "architecture" / "web_ssg_architecture.md").is_file())
+
+            # Verify .github/copilot_instructions.md for Web
+            copilot_web = (web_target / ".github" / "copilot_instructions.md").read_text(encoding="utf-8")
+            self.assertIn("Profile: WEB", copilot_web)
+            self.assertIn("Astro", copilot_web)
+            self.assertIn("HALT GATE", copilot_web)
+
 
 
 if __name__ == "__main__":

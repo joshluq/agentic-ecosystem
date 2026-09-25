@@ -98,6 +98,78 @@ def generate_profile_config(target_dir: Path, profile: str):
     print(f"    -> Generated {config_file.name} for profile '{profile}'.")
 
 
+def generate_copilot_instructions(target_dir: Path, profile: str):
+    github_dir = target_dir / '.github'
+    github_dir.mkdir(parents=True, exist_ok=True)
+    copilot_file = github_dir / 'copilot_instructions.md'
+
+    platform_rules = {
+        'android': """### Platform Guardrails: Android (Kotlin / Jetpack Compose)
+- **Architecture**: Clean Architecture + MVI. Follow 4-Layer Compose (Screen -> Coordinator -> Content -> Components).
+- **Presentation**: Pure Unidirectional Data Flow (UDF). State is immutable StateFlow; actions are sealed interfaces.
+- **Testing**: Test StateFlow with Turbine; mock dependencies with MockK; test UI with ComposeTestRule.
+- **Boundaries**: Strictly NO direct database/SQL or backend code. Respect Min SDK 24 / Target SDK 35.
+- **Design Tokens**: Enforce design tokens (CanvasKit / FoundationKit). Never hardcode hex colors or raw dimensions.
+- **Roles & Governance**: Refer to `AGENTS.md` (PO, Solutions Architect, Mobile Architect, Senior Android Dev, Android QA).""",
+        'backend': """### Platform Guardrails: Backend (Supabase / PostgreSQL / Edge Functions / Deno)
+- **Database & Migrations**: All PostgreSQL migrations MUST be wrapped in atomic `BEGIN ... COMMIT` blocks with idempotency.
+- **Multi-Tenant Security**: Enforce PostgreSQL Row Level Security (RLS) on all tables (`auth.uid() = user_id`). Never bypass RLS.
+- **API & Edge Functions**: Use TypeScript / Deno for Edge Functions. Implement defensive schema validation.
+- **Secrets Management**: Public clients only receive `anon` key. Never expose `service_role` key.
+- **Boundaries**: Strictly NO Android/Kotlin/Compose dependencies. Focus exclusively on backend, DB, and APIs.
+- **Roles & Governance**: Refer to `AGENTS.md` (PO, Solutions Architect, Backend Architect, Senior Backend Dev, Backend QA, DevOps).""",
+        'web': """### Platform Guardrails: Web (Astro SSG / Tailwind CSS)
+- **Architecture**: Astro Static Site Generation (SSG) with semantic HTML and Tailwind CSS.
+- **Performance Budget**: Target Google Lighthouse >= 90 across Performance, Accessibility, Best Practices, SEO.
+- **Zero JS Bloat**: Pure static HTML output for legal and informational pages. Avoid unnecessary client-side JS.
+- **Compliance**: Adhere to GDPR, privacy disclosures, and app store account deletion policy requirements.
+- **Boundaries**: Strictly NO mobile Android code or server-side DB operations.
+- **Roles & Governance**: Refer to `AGENTS.md` (PO, Solutions Architect, Web Architect, Senior Web Dev, Web QA).""",
+        'all': """### Platform Guardrails: Full Multi-Disciplinary System
+- Adhere to the specific platform boundaries (Android, Backend, Web) depending on the target module.
+- Refer to `AGENTS.md` for role boundaries, schemas, and architectural guidelines."""
+    }
+
+    selected_platform_rule = platform_rules.get(profile, platform_rules['all'])
+
+    content = f"""# GitHub Copilot & AI Developer Instructions
+
+You are assisting developers working in an enterprise **Specification-Driven Development (SDD)** ecosystem governed by `AGENTS.md`.
+
+## 1. Golden Rules of Development
+
+1. **Spec-First (No Spec, No Code)**:
+   - NEVER generate, propose, or write code without an approved upstream specification (`openspec/changes/` or `templates/prd-template.md`).
+   - All code changes must trace directly to explicit functional requirements (`FR-xx`) and acceptance criteria (`AC-xx`).
+
+2. **HITL 2-Stage Gate (Human-In-The-Loop)**:
+   - **Stage 1 (Specification & Technical Design)**: PO and Architect align on requirements, failure consequences, and interface contracts.
+   - **HALT GATE**: If there are unresolved open questions (`Dudas Abiertas Bloqueantes`), **STOP IMMEDIATELY**. You must prompt the developer/stakeholder for clarification before proceeding.
+   - **Stage 2 (Implementation & Verification)**: Only write code after Stage 1 is fully approved.
+
+3. **Zero Ghost Code (Anti-Scope Creep)**:
+   - Strictly prohibit adding unrequested endpoints, hidden parameters, undeclared UI components, or phantom behaviors.
+   - Implement ONLY what is documented in the approved specification.
+
+4. **Negative Testing for Business Rules (`BR-xx`)**:
+   - Every business rule must define an explicit failure consequence (`BR-xx`).
+   - Every failure branch must have automated negative test coverage (HTTP 4xx/5xx, localized error UI, fallback state).
+
+## 2. Platform Discipline Profile: {profile.upper()}
+
+{selected_platform_rule}
+
+## 3. Workflow References
+
+- Role Specifications & Technical Guardrails: `AGENTS.md` (Section 5)
+- Living Specifications: `openspec/specs/`
+- Active Changes & Proposals: `openspec/changes/`
+- Handoff & Validation Schemas: `schemas/`
+"""
+    copilot_file.write_text(content.strip() + "\n", encoding="utf-8")
+    print(f"    -> Generated {copilot_file.relative_to(target_dir)} for profile '{profile}'.")
+
+
 def install_ecosystem(target_dir: Path, mode: str = 'both', profile: str = 'android', overwrite: bool = True, update_agents: bool = False):
     source_root = Path(__file__).resolve().parent.parent
     target_dir = target_dir.resolve()
@@ -198,6 +270,9 @@ def install_ecosystem(target_dir: Path, mode: str = 'both', profile: str = 'andr
 
         # Generate profile-tailored .atlassian_config.json.example
         generate_profile_config(target_dir, profile)
+
+        # Generate profile-tailored .github/copilot_instructions.md
+        generate_copilot_instructions(target_dir, profile)
 
     print("\n===========================================================")
     print(f"   🎉 Deployment Complete for Profile: {profile.upper()}")
