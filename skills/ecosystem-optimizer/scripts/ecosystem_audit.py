@@ -33,6 +33,7 @@ if str(REPO_ROOT) not in sys.path:
 from audit_context_budget import audit_context_budget
 from lint_platform_leakage import lint_platform_leakage
 from validate_spokes_sync import check_spoke_sync, find_known_spokes
+from audit_context_pruning import audit_context_pruning
 
 try:
     from scripts.schema_validator import validate_schema
@@ -94,7 +95,10 @@ def run_full_ecosystem_audit(target_dir: Path, profile: str = "auto", check_spok
     # 3. Schema validation
     schema_result = audit_schemas(target_dir)
 
-    # 4. Spoke sync (if run on hub)
+    # 4. Context pruning (platitudes, redundancies, contradictions)
+    pruning_result = audit_context_pruning(target_dir)
+
+    # 5. Spoke sync (if run on hub)
     spokes_results = []
     is_hub = (target_dir / "profiles").is_dir()
     if is_hub and check_spokes:
@@ -107,11 +111,13 @@ def run_full_ecosystem_audit(target_dir: Path, profile: str = "auto", check_spok
     critical_failures = (
         budget_result["overall_status"] == "FAIL" or
         leakage_result["status"] == "FAIL" or
-        schema_result["status"] == "FAIL"
+        schema_result["status"] == "FAIL" or
+        pruning_result["status"] == "FAIL"
     )
 
     warnings = (
         budget_result["overall_status"] == "WARN" or
+        pruning_result["status"] == "WARN" or
         any(s["overall_status"] != "IN_SYNC" for s in spokes_results)
     )
 
@@ -125,6 +131,7 @@ def run_full_ecosystem_audit(target_dir: Path, profile: str = "auto", check_spok
         "budget": budget_result,
         "leakage": leakage_result,
         "schemas": schema_result,
+        "pruning": pruning_result,
         "spokes": spokes_results,
     }
 
@@ -184,13 +191,22 @@ def generate_markdown_report(report: Dict[str, Any], output_path: Path):
         f"- **Schemas Validated**: {report['schemas']['schemas_checked']}",
         f"- **Valid Draft-07**: {report['schemas']['passed']} / {report['schemas']['schemas_checked']}",
         f"",
+        f"---",
+        f"",
+        f"## 4. Context Pruning & Redundancy Audit",
+        f"- **Status**: `{report.get('pruning', {}).get('status', 'PASS')}`",
+        f"- **Zero-Signal Platitudes**: {report.get('pruning', {}).get('platitudes_count', 0)}",
+        f"- **Cross-File Redundancies**: {report.get('pruning', {}).get('redundancies_count', 0)}",
+        f"- **Rule Contradictions**: {report.get('pruning', {}).get('contradictions_count', 0)}",
+        f"- **Prunable Tokens**: ~{report.get('pruning', {}).get('estimated_prunable_tokens', 0):,} tokens",
+        f"",
     ])
 
     if report["spokes"]:
         md.extend([
             f"---",
             f"",
-            f"## 4. Hub-to-Spoke Synchronization Matrix",
+            f"## 5. Hub-to-Spoke Synchronization Matrix",
             f"| Spoke | Status | In Sync | Drifted | Missing |",
             f"| :--- | :--- | :--- | :--- | :--- |",
         ])
@@ -226,9 +242,10 @@ def main():
     print(f" 1. Context Budget  : [{report['budget']['overall_status']}] ~{report['budget']['total_estimated_tokens']:,} tokens across {report['budget']['files_analyzed']} files")
     print(f" 2. Platform Purity : [{report['leakage']['status']}] {report['leakage']['violations_count']} domain leaks detected")
     print(f" 3. Schema Quality  : [{report['schemas']['status']}] {report['schemas']['passed']}/{report['schemas']['schemas_checked']} schemas valid Draft-07")
+    print(f" 4. Context Pruning : [{report['pruning']['status']}] {report['pruning']['platitudes_count']} platitudes, {report['pruning']['redundancies_count']} duplicates, {report['pruning']['contradictions_count']} contradictions")
 
     if report["spokes"]:
-        print(f" 4. Spoke Parity    : {len(report['spokes'])} satellite repositories audited")
+        print(f" 5. Spoke Parity    : {len(report['spokes'])} satellite repositories audited")
         for sp in report["spokes"]:
             print(f"    - {sp['spoke']}: [{sp['overall_status']}] (In Sync: {sp['in_sync_count']}, Drift: {sp['drifted_count']}, Missing: {sp['missing_count']})")
 

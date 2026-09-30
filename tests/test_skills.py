@@ -112,6 +112,7 @@ class TestSkillsSpecification(unittest.TestCase):
             ("ecosystem-optimizer", "audit_context_budget.py"),
             ("ecosystem-optimizer", "lint_platform_leakage.py"),
             ("ecosystem-optimizer", "validate_spokes_sync.py"),
+            ("ecosystem-optimizer", "audit_context_pruning.py"),
         ]
 
         for skill_name, script_name in expected_scripts:

@@ -32,6 +32,14 @@ from validate_spokes_sync import (
     file_sha256,
     check_spoke_sync,
 )
+from audit_context_pruning import (
+    scan_file_for_platitudes,
+    detect_cross_file_redundancies,
+    detect_contradictions,
+    audit_context_pruning,
+    is_negative_constraint,
+    extract_directives,
+)
 from ecosystem_audit import (
     audit_schemas,
     run_full_ecosystem_audit,
@@ -198,6 +206,78 @@ class TestMasterEcosystemAudit(unittest.TestCase):
             content = out_file.read_text(encoding="utf-8")
             self.assertIn("Ecosystem Health & Optimization Report", content)
             self.assertIn("🟢 **PASS**", content)
+
+
+class TestContextPruningAuditor(unittest.TestCase):
+    def test_scan_file_for_platitudes(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir) / "fluffy.md"
+            tmp_path.write_text(
+                "# Guidelines\n"
+                "- Write clean, readable code at all times.\n"
+                "- Remember to import necessary libraries.\n"
+                "- Use clear and descriptive variable names.\n"
+                "- Strictly enforce Min SDK 24.\n",
+                encoding="utf-8"
+            )
+            findings = scan_file_for_platitudes(tmp_path)
+            self.assertEqual(len(findings), 3)
+            matched = [f["matched"] for f in findings]
+            self.assertTrue(any("clean" in m for m in matched))
+            self.assertTrue(any("import" in m for m in matched))
+            self.assertTrue(any("names" in m for m in matched))
+
+    def test_detect_cross_file_redundancies(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_dir_path = Path(tmp_dir)
+            f1 = tmp_dir_path / "file1.md"
+            f2 = tmp_dir_path / "file2.md"
+            f1.write_text(
+                "- Strictly prohibit adding unrequested endpoints or hidden parameters to prevent scope creep.\n",
+                encoding="utf-8"
+            )
+            f2.write_text(
+                "- Strictly prohibit adding unrequested endpoints and hidden parameters to avoid scope creep.\n",
+                encoding="utf-8"
+            )
+
+            d1 = extract_directives(f1, tmp_dir_path)
+            d2 = extract_directives(f2, tmp_dir_path)
+            directives_map = {f1: d1, f2: d2}
+
+            redundancies = detect_cross_file_redundancies(directives_map)
+            self.assertEqual(len(redundancies), 1)
+            self.assertGreaterEqual(redundancies[0]["similarity"], 0.75)
+
+    def test_detect_contradictions_autonomy_vs_halt(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_dir_path = Path(tmp_dir)
+            f1 = tmp_dir_path / "auto.md"
+            f2 = tmp_dir_path / "halt.md"
+            f1.write_text("- Execute fully autonomously without asking any questions.\n", encoding="utf-8")
+            f2.write_text("- Mandatory halt gate activated: stop immediately and prompt the developer.\n", encoding="utf-8")
+
+            contradictions = detect_contradictions([f1, f2], tmp_dir_path)
+            self.assertEqual(len(contradictions), 1)
+            self.assertEqual(contradictions[0]["id"], "AUTONOMY_VS_HALT")
+
+    def test_negative_constraint_does_not_false_alarm(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_dir_path = Path(tmp_dir)
+            f1 = tmp_dir_path / "arch.md"
+            f1.write_text(
+                "- Immutable UI state models must be used exclusively.\n"
+                "- NEVER allow mutable UI state in component contracts.\n",
+                encoding="utf-8"
+            )
+            contradictions = detect_contradictions([f1], tmp_dir_path)
+            self.assertEqual(len(contradictions), 0)
+
+    def test_audit_context_pruning_on_project(self):
+        report = audit_context_pruning(PROJECT_ROOT)
+        self.assertIn("status", report)
+        self.assertIn(report["status"], ["PASS", "WARN"])
+        self.assertGreater(report["files_analyzed"], 0)
 
 
 if __name__ == "__main__":

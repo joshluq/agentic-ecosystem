@@ -902,9 +902,10 @@ def cmd_workflow_audit(
     print(f" 1. Context Budget  : [{result['budget']['overall_status']}] ~{result['budget']['total_estimated_tokens']:,} tokens across {result['budget']['files_analyzed']} files")
     print(f" 2. Platform Purity : [{result['leakage']['status']}] {result['leakage']['violations_count']} domain leaks detected")
     print(f" 3. Schema Quality  : [{result['schemas']['status']}] {result['schemas']['passed']}/{result['schemas']['schemas_checked']} schemas valid Draft-07")
+    print(f" 4. Context Pruning : [{result['pruning']['status']}] {result['pruning']['platitudes_count']} platitudes, {result['pruning']['redundancies_count']} duplicates, {result['pruning']['contradictions_count']} contradictions")
 
     if result["spokes"]:
-        print(f" 4. Spoke Parity    : {len(result['spokes'])} satellite repositories audited")
+        print(f" 5. Spoke Parity    : {len(result['spokes'])} satellite repositories audited")
         for sp in result["spokes"]:
             print(f"    - {sp['spoke']}: [{sp['overall_status']}] (In Sync: {sp['in_sync_count']}, Drift: {sp['drifted_count']}, Missing: {sp['missing_count']})")
 
