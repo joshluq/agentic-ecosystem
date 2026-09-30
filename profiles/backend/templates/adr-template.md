@@ -56,10 +56,11 @@
   - Database migrations must be explicitly crafted in SQL with transactional blocks.
   - Synchronizing routes between local Node server and Deno Edge Functions requires discipline or shared modules.
 - **Neutral Consequences**:
-  - Requires team convention compliance regarding state hoisting and modifier chaining.
+  - Requires strict convention compliance regarding DTO validation and error serialization.
 
 ## 7. Guardrails & Compliance Rules
-1. **No Direct Repository Calls in Composables**: Composable functions must never instantiate or directly collect from Repositories; all access must flow through ViewModel and UseCases.
-2. **Inject All Dispatchers**: Hardcoded calls to `Dispatchers.IO` or `Dispatchers.Default` inside ViewModels or UseCases are strictly forbidden.
-3. **Immutable State Only**: UI State must be represented by an immutable Kotlin `data class` with `val` properties only. Mutable collections (`ArrayList`, `MutableMap`) are prohibited in UiState.
-4. **Modifier Hoisting**: All public Composable screens must accept a root `modifier: Modifier = Modifier` parameter and chain it to the top-level layout node.
+1. **Mandatory Row Level Security (RLS)**: Every public table must enable RLS and have explicit tenant isolation policies (`auth.uid() = user_id`).
+2. **Atomic Migrations**: All database schema changes must be wrapped in transactional `BEGIN ... COMMIT` blocks with idempotent guards (`IF NOT EXISTS`).
+3. **Never Expose Service Role Key**: Client-facing endpoints and edge functions must never return or leak `SUPABASE_SERVICE_ROLE_KEY`.
+4. **Defensive Schema Validation**: All external payload inputs must be validated with runtime schema parsing before reaching domain or database services.
+

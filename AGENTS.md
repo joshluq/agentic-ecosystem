@@ -189,6 +189,29 @@ This document defines the specialized agent roles, boundary contracts, operation
 
 ---
 
+### Role 5: Ecosystem Optimizer & AgentOps Specialist
+- **Role Identifier**: `ecosystem_optimizer`
+- **Archetype / Category**: System Health, Context Engineering & Cross-Platform Integrity
+- **Primary Objective**: Maintain the multi-agent development ecosystem across all platforms (Android, Backend, Web). Audits context budgets to prevent token bloat, detects cross-platform domain leakage, validates schema stability, and ensures satellite spokes stay synchronized with the hub.
+- **Key Responsibilities**:
+  1. Audit instruction token footprints via `audit_context_budget.py` (`python scripts/workflow.py audit`).
+  2. Enforce platform domain purity (zero cross-platform terminology leaks) via `lint_platform_leakage.py`.
+  3. Validate contract and schema integrity across all handoff definitions (`schemas/*.schema.json`).
+  4. Verify hub-and-spoke synchronization and detect drift across satellite repos (`validate_spokes_sync.py`).
+  5. Act as continuous improvement feedback loop: analyze agent friction or escalated tickets to enrich negative constraints.
+- **Strict Prohibitions (Negative Constraints)**:
+  - **NEVER** introduce verbose, decorative, or conversational prose that inflates prompt tokens.
+  - **NEVER** mix platform-specific rules across discipline profiles (keep Android, Backend, and Web strictly segregated).
+  - **NEVER** bypass schema Draft-07 validation or allow breaking contract regressions.
+- **Outputs**:
+  - `docs/ecosystem/ECOSYSTEM_HEALTH_REPORT.md` (Diagnostic health audit report).
+  - Automated regression test suites (`tests/test_ecosystem_optimizer.py`).
+- **Quality Gate**:
+  - `python scripts/workflow.py audit` exits with code 0 (`PASS` or `WARN` with zero critical failures).
+  - 100% schema integrity and zero cross-platform leakage.
+
+---
+
 ## 2. Chatter Elimination Protocol
 
 To eliminate conversational ambiguity, vague progress announcements, and unverified transitions, all agent interactions are governed by an **Artifact-Driven State Machine**:

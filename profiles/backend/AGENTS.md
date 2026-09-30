@@ -259,11 +259,11 @@ When the Senior Backend Developer identifies that an architectural contract or c
 
 | Escalation Category | Root Cause Description | Trigger Condition | Escalation Routing Action |
 |---|---|---|---|
-| **UNCOMPILABLE_INTERFACE** | Kotlin compiler error on contract definitions (e.g. invalid generics, unresolved platform classes, incompatible type bounds). | `kotlinc` emits error during compilation or contract stub verification. | Orchestrator dispatches `dev_to_architect_escalation` to Software Architect. Architect revises COMP-SPEC and re-issues `architect_to_dev` payload. |
-| **DEPENDENCY_UNSATISFIED** | Contract relies on missing library coordinate or incompatible version. | Gradle dependency resolution failure or missing artifact. | Architect adds valid coordinate to `dependencies` array in `architect_to_dev_handoff` and updates ADR. |
-| **UDF_CONTRACT_VIOLATION** | Contract forces Composable to mutate state directly or exposes mutable collections. | Static analysis / contract review against UDF principles. | Architect revises state/event model to preserve strict Unidirectional Data Flow. |
-| **CONCURRENCY_MODEL_CONFLICT** | Contract forces blocking calls in composables or lacks dispatcher injection. | Coroutines/threading rule conflict. | Architect injects proper CoroutineDispatcher / CoroutineScope into contract. |
-| **SPECIFICATION_DEFICIT** | PRD acceptance criterion requires an action or state variable omitted in the Component Spec. | Implementation gap against PRD AC-xx. | Architect adds required UIAction / UiState to Component Spec and re-issues handoff. |
+| **UNCOMPILABLE_INTERFACE** | TypeScript / Deno type error on contract definitions (e.g. invalid generics, unresolved module imports, incompatible schema types). | `tsc` or `deno check` emits error during build or contract verification. | Orchestrator dispatches `dev_to_architect_escalation` to Backend Architect. Architect revises COMP-SPEC and re-issues `architect_to_dev` payload. |
+| **DEPENDENCY_UNSATISFIED** | Contract relies on missing npm/deno library or incompatible version. | Package manager resolution failure or missing module. | Architect adds valid coordinate to `dependencies` array in `architect_to_dev_handoff` and updates ADR. |
+| **SECURITY_OR_RLS_VIOLATION** | Contract bypasses Row Level Security or exposes administrative keys. | Security review / static schema analysis. | Architect revises database migration and policies to enforce tenant isolation. |
+| **ASYNC_CONTRACT_CONFLICT** | Contract forces blocking unhandled promises or improper error handling. | Node/Deno runtime conflict or deadlock. | Architect updates async signature and error boundaries in the contract. |
+| **SPECIFICATION_DEFICIT** | PRD acceptance criterion requires an endpoint, query parameter, or field omitted in Component Spec. | Implementation gap against PRD AC-xx. | Architect adds required parameter/field to Component Spec and re-issues handoff. |
 
 ### Escalation Safeguards:
 - **Remediation Cycle Tracking**: Each Pre-QA escalation carries an explicit `remediation_cycle` (0..3) which increments with each round-trip between Developer and Architect.
