@@ -21,7 +21,31 @@ Connects our multi-agent Android engineering ecosystem directly to **Atlassian J
 
 ---
 
-## 2. Quick Command Reference
+## 2. Dual Modality Architecture
+
+The integration supports two complementary operational modes:
+
+| Modality | Technology | Use Case | Tools / Entrypoint |
+| :--- | :--- | :--- | :--- |
+| **Interactive Chat** | **MCP Server** (`jira-confluence`) | Real-time chat queries, ticket exploration, spontaneous transitions, and Confluence page inspection directly in Antigravity | `jira_search`, `jira_get_issue`, `jira_create_issue`, `jira_transition_issue`, `jira_add_comment`, `search_confluence`, `get_confluence_page` |
+| **Automated Pipeline** | **CLI Bridge** (`atlassian_bridge.py`) | Headless CI/CD, batch operations, OpenSpec scaffold generation, and strict state guard enforcement | `python scripts/atlassian_bridge.py [check\|board\|fetch\|transition\|comment\|sync-confluence]` |
+
+---
+
+## 3. MCP Server Configuration
+
+Configured globally in `~/.gemini/config/mcp_config.json`:
+- **Server Name**: `jira-confluence`
+- **Package**: `mcp-jira-confluence@latest` (via `npx -y`)
+- **Environment**:
+  - `ATLASSIAN_URL`: `https://joshluq-dev.atlassian.net`
+  - `ATLASSIAN_EMAIL`: User Atlassian email account
+  - `ATLASSIAN_API_TOKEN`: Atlassian API Token
+  - `IGNORE_TLS_ERRORS`: `true`
+
+---
+
+## 4. Quick Command Reference (CLI Bridge)
 
 ```bash
 # Check connection
