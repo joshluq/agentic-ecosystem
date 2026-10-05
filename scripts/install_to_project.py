@@ -209,10 +209,10 @@ def install_ecosystem(target_dir: Path, mode: str = 'both', profile: str = 'andr
         else:
             print("    -> No skills installed.")
 
-    # 2. Install SDD Contracts, Schemas, Templates, Walkthrough & OpenSpec
+    # 2. Install SDD Contracts, Schemas, Templates & OpenSpec
     if mode in ('standalone', 'both'):
-        # Universal Schemas & Walkthrough
-        for folder in ('schemas', 'walkthrough'):
+        # Universal Schemas (walkthrough is a hub-only test fixture since v2/F1)
+        for folder in ('schemas',):
             src_f = source_root / folder
             dst_f = target_dir / folder
             print(f"\n[2] Installing {folder} to {dst_f}...")

@@ -10,9 +10,9 @@ from scripts.schema_validator import validate_schema
 def run():
     print('=== Running End-to-End Walkthrough Pipeline (FEAT-001) ===')
     root = Path(__file__).resolve().parent.parent
-    handoffs_dir = root / 'walkthrough' / 'handoffs'
+    handoffs_dir = root / 'tests' / 'fixtures' / 'walkthrough' / 'handoffs'
     schemas_dir = root / 'schemas'
-    docs_dir = root / 'walkthrough' / 'docs'
+    docs_dir = root / 'tests' / 'fixtures' / 'walkthrough' / 'docs'
 
     # Stage 1: PO Handoff
     po_file = handoffs_dir / 'po_to_architect_FEAT-001.json'
@@ -42,7 +42,7 @@ def run():
         validate_schema(dev_data, json.load(f))
     assert dev_data['architect_handoff_ref'] == arch_data['handoff_id'], 'Handoff reference mismatch'
     for change in dev_data['code_changes']:
-        fp = root / change['file_path']
+        fp = root / 'tests' / 'fixtures' / change['file_path']  # handoff paths are relative to the fixtures dir
         assert fp.is_file(), f'Code file missing: {fp}'
     print('[STAGE 3: DEV -> QA] Validated successfully (Code files verified on disk).')
 
@@ -60,7 +60,7 @@ def run():
     assert po_acs.issubset(qa_acs), f'Not all PO criteria verified: {po_acs - qa_acs}'
     print('[STAGE 4: QA VERDICT] Validated successfully (100% Acceptance Criteria verified).')
 
-    report_path = root / 'walkthrough' / 'WALKTHROUGH_REPORT.md'
+    report_path = root / 'tests' / 'fixtures' / 'walkthrough' / 'WALKTHROUGH_REPORT.md'
     with open(report_path, 'w', encoding='utf-8') as f:
         f.write('# FEAT-001 Walkthrough Execution Audit Report\n\n')
         f.write('- **Feature ID**: FEAT-001\n')

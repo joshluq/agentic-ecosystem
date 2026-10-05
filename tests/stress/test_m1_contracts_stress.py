@@ -464,7 +464,7 @@ def run_all_challenges():
     results = TestResults()
     
     # Load schemas
-    schemas_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "schemas"))
+    schemas_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "schemas"))
     po_schema = json.load(open(os.path.join(schemas_dir, "po_to_architect_handoff.schema.json"), encoding="utf-8"))
     arch_schema = json.load(open(os.path.join(schemas_dir, "architect_to_dev_handoff.schema.json"), encoding="utf-8"))
     dev_schema = json.load(open(os.path.join(schemas_dir, "dev_to_qa_handoff.schema.json"), encoding="utf-8"))

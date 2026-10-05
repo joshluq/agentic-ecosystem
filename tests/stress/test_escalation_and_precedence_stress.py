@@ -132,7 +132,7 @@ def validate_schema(instance, schema, path="root"):
 # 2. Schema Loaders
 # ==============================================================================
 
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SCHEMAS_DIR = os.path.join(PROJECT_ROOT, "schemas")
 TEMPLATES_DIR = os.path.join(PROJECT_ROOT, "templates")
 

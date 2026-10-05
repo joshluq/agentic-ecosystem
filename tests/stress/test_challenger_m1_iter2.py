@@ -34,7 +34,7 @@ class CustomValidator:
             return [e]
 
 def load_schema(rel_path):
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     full_path = os.path.join(base_dir, rel_path)
     with open(full_path, "r", encoding="utf-8") as f:
         return json.load(f)

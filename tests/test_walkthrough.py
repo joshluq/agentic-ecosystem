@@ -7,7 +7,7 @@ from scripts.schema_validator import validate_schema
 class TestWalkthrough(unittest.TestCase):
     def setUp(self):
         self.root = Path(__file__).resolve().parent.parent
-        self.wt = self.root / 'walkthrough'
+        self.wt = self.root / 'tests' / 'fixtures' / 'walkthrough'
 
     def test_handoff_files_exist(self):
         expected_handoffs = [
@@ -33,14 +33,14 @@ class TestWalkthrough(unittest.TestCase):
 
     def test_kotlin_source_and_test_files_exist(self):
         expected_src = [
-            'walkthrough/src/main/kotlin/com/example/profile/model/UserProfile.kt',
-            'walkthrough/src/main/kotlin/com/example/profile/ui/ProfileUiState.kt',
-            'walkthrough/src/main/kotlin/com/example/profile/ui/ProfileUiAction.kt',
-            'walkthrough/src/main/kotlin/com/example/profile/ui/ProfileScreen.kt',
-            'walkthrough/src/main/kotlin/com/example/profile/ui/ProfileViewModel.kt',
-            'walkthrough/src/main/kotlin/com/example/profile/data/ProfileRepository.kt',
-            'walkthrough/src/test/kotlin/com/example/profile/ProfileViewModelTest.kt',
-            'walkthrough/src/test/kotlin/com/example/profile/ProfileScreenTest.kt'
+            'tests/fixtures/walkthrough/src/main/kotlin/com/example/profile/model/UserProfile.kt',
+            'tests/fixtures/walkthrough/src/main/kotlin/com/example/profile/ui/ProfileUiState.kt',
+            'tests/fixtures/walkthrough/src/main/kotlin/com/example/profile/ui/ProfileUiAction.kt',
+            'tests/fixtures/walkthrough/src/main/kotlin/com/example/profile/ui/ProfileScreen.kt',
+            'tests/fixtures/walkthrough/src/main/kotlin/com/example/profile/ui/ProfileViewModel.kt',
+            'tests/fixtures/walkthrough/src/main/kotlin/com/example/profile/data/ProfileRepository.kt',
+            'tests/fixtures/walkthrough/src/test/kotlin/com/example/profile/ProfileViewModelTest.kt',
+            'tests/fixtures/walkthrough/src/test/kotlin/com/example/profile/ProfileScreenTest.kt'
         ]
         for f in expected_src:
             p = self.root / f

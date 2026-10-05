@@ -136,17 +136,15 @@ agentic-ecosystem/
 │   ├── schema_validator.py                # Schema validator engine
 │   ├── verify_ecosystem.py                # Master verification runner
 │   └── run_walkthrough.py                 # End-to-end walkthrough demonstrator
-├── tests/                                 # Automated Unittest & Stress Test Suite
-│   ├── test_skills.py                     # Validates all 10 skills frontmatter & integrity
+├── tests/                                 # Automated Unittest Suite
+│   ├── test_skills.py                     # Validates all skills frontmatter & integrity
 │   ├── test_contracts.py                  # Validates schemas against templates
 │   ├── test_scripts.py                    # Unit tests for skill helper scripts
 │   ├── test_walkthrough.py                # E2E pipeline verification
-│   └── test_m1_contracts_stress.py        # 79 Empirical stress & edge-case tests
-├── walkthrough/                           # Executed Golden Sample (FEAT-001)
-│   ├── docs/                              # Concrete PRD, ADR, Spec & QA reports
-│   ├── handoffs/                          # Golden JSON handoff payloads
-│   └── src/                               # Working Kotlin MVI code & tests
-├── AGENTS.md                              # Multi-Agent Operating Charter
+│   ├── stress/                            # Empirical schema stress suites (run as scripts)
+│   └── fixtures/walkthrough/              # Executed Golden Sample (FEAT-001): docs, handoffs, Kotlin src
+├── docs/v2/                               # v2 roadmap & context/FinOps report
+├── AGENTS.md                              # Multi-Agent Operating Charter (agent instructions)
 └── README.md
 ```
 
@@ -213,31 +211,7 @@ python agentic-ecosystem/scripts/install_to_project.py --target /path/to/YourAnd
 
 ## 🛡️ Escalation & Circuit Breaker Protocol
 
-When an agent encounters a blocker (e.g., an uncompilable architectural interface, an unsatisfied library dependency, or an incomplete PRD requirement), it **must not** make assumptions or hallucinate. 
-
-Instead, it issues an escalation contract conforming to `dev_to_architect_escalation.schema.json`:
-
-```json
-{
-  "$schema": "https://json-schema.org/draft-07/schema#",
-  "contract_id": "ESC-FEAT-001-001",
-  "feature_id": "FEAT-001",
-  "sender_role": "Senior Android Developer",
-  "recipient_role": "Software Architect",
-  "escalation_category": "UNCOMPILABLE_INTERFACE",
-  "blocks_implementation": true,
-  "remediation_cycle": 1,
-  "violations": [
-    {
-      "category": "INTERFACE_MISMATCH",
-      "target_artifact": "templates/component-spec-template.md",
-      "description": "UseCase returns Flow<DomainResult> but ViewModel expects Result<DomainModel>."
-    }
-  ]
-}
-```
-
-The Harness intercepts the escalation, halts execution, and redirects the task back to the Architect for resolution before any invalid code reaches the QA or Dev stage.
+Agents never guess past a blocker: they emit a typed escalation (`schemas/dev_to_architect_escalation.schema.json`) and the harness routes it upstream. The normative protocol lives in [AGENTS.md](AGENTS.md) (§2–§3); this README is for humans only.
 
 ---
 
