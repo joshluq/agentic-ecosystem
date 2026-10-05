@@ -20,7 +20,7 @@ class TestSkillsSpecification(unittest.TestCase):
             self.skills_dir = self.project_root / "skills"
 
     def test_all_expected_skills_exist(self):
-        is_hub = (self.project_root / "profiles").is_dir()
+        is_hub = (self.project_root / "packs").is_dir() or (self.project_root / "profiles").is_dir()
         if is_hub:
             expected_skills = [
                 "android-device",

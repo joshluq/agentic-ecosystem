@@ -20,6 +20,8 @@ class TestContracts(unittest.TestCase):
         for name in expected:
             schema_path = self.schemas_dir / name
             self.assertTrue(schema_path.is_file(), f'Missing schema: {name}')
+            core_schema_path = self.root / 'core' / 'schemas' / name
+            self.assertTrue(core_schema_path.is_file(), f'Missing core schema: {name}')
             with open(schema_path, encoding='utf-8') as f:
                 data = json.load(f)
             self.assertEqual(data.get('type'), 'object')
@@ -27,6 +29,7 @@ class TestContracts(unittest.TestCase):
 
     def test_schema_templates_exist(self):
         templates_dir = self.root / 'templates'
+        core_templates_dir = self.root / 'core' / 'templates'
         expected = [
             'prd-template.md',
             'adr-template.md',
@@ -36,6 +39,7 @@ class TestContracts(unittest.TestCase):
         ]
         for name in expected:
             self.assertTrue((templates_dir / name).is_file(), f'Missing template: {name}')
+            self.assertTrue((core_templates_dir / name).is_file(), f'Missing core template: {name}')
 
 if __name__ == '__main__':
     unittest.main()

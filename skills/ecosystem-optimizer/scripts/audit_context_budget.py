@@ -81,8 +81,18 @@ def audit_context_budget(target_dir: Path) -> Dict[str, Any]:
     results: List[Dict[str, Any]] = []
 
     # 1. Check AGENTS.md
-    for agent_path in [target_dir / "AGENTS.md", target_dir / "profiles" / "android" / "AGENTS.md", target_dir / "profiles" / "backend" / "AGENTS.md"]:
-        if agent_path.is_file():
+    agent_candidates = [
+        target_dir / "AGENTS.md",
+        target_dir / "core" / "AGENTS.md",
+        target_dir / "packs" / "android" / "AGENTS.md",
+        target_dir / "packs" / "backend" / "AGENTS.md",
+        target_dir / "profiles" / "android" / "AGENTS.md",
+        target_dir / "profiles" / "backend" / "AGENTS.md"
+    ]
+    seen_agents = set()
+    for agent_path in agent_candidates:
+        if agent_path.is_file() and str(agent_path.resolve()) not in seen_agents:
+            seen_agents.add(str(agent_path.resolve()))
             results.append(analyze_file(agent_path, "agents_md"))
 
     # 2. Check copilot_instructions.md

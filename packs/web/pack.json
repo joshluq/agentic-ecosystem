@@ -1,0 +1,12 @@
+{
+  "name": "web",
+  "version": "2.0.0",
+  "description": "Web discipline pack: Astro SSG, Tailwind CSS, Lighthouse SEO, WCAG 2.1 AA accessibility, and legal compliance.",
+  "requires_core": ">=2.0.0",
+  "skills": [
+    "legal-compliance-audit",
+    "web-lighthouse-seo",
+    "new-feature",
+    "fix-bug"
+  ]
+}

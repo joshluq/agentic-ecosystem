@@ -1,5 +1,5 @@
-# Agentic Ecosystem 🤖📱
-> **A Production-Grade Multi-Agent Framework for Modern Android Development powered by Spec-Driven Development (SDD), Deterministic Test Harnesses, and Autonomous Role Specialization.**
+# Agentic Ecosystem 🤖
+> **A Production-Grade Multi-Agent Framework for Spec-Driven Development (SDD), Deterministic Test Harnesses, and Multi-Disciplinary Autonomous Engineering (Android, Backend, Web).**
 
 [![CI Verification](https://github.com/joshluq/agentic-ecosystem/actions/workflows/agentic-verification.yml/badge.svg)](https://github.com/joshluq/agentic-ecosystem/actions)
 [![Python Version](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)

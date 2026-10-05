@@ -16,6 +16,7 @@ Usage:
 """
 
 import argparse
+import datetime
 import json
 import os
 import shutil
@@ -171,7 +172,7 @@ You are assisting developers working in an enterprise **Specification-Driven Dev
     print(f"    -> Generated {copilot_file.relative_to(target_dir)} for profile '{profile}'.")
 
 
-def install_ecosystem(target_dir: Path, mode: str = 'both', profile: str = 'android', overwrite: bool = True, update_agents: bool = False):
+def install_ecosystem(target_dir: Path, mode: str = 'both', profile: str = 'android', overwrite: bool = True, update_agents: bool = False, pack: Optional[str] = None):
     source_root = Path(__file__).resolve().parent.parent
     target_dir = target_dir.resolve()
 
@@ -179,17 +180,41 @@ def install_ecosystem(target_dir: Path, mode: str = 'both', profile: str = 'andr
         print(f"[ERROR] Target directory does not exist: {target_dir}")
         sys.exit(1)
 
-    allowed_skills = PROFILE_SKILLS.get(profile)
+    effective_pack = pack or profile
+    allowed_skills = PROFILE_SKILLS.get(effective_pack)
 
-    profile_dir = source_root / 'profiles' / profile
+    # Resolve pack directory: check packs/<pack>, then fallback to profiles/<pack>
+    pack_dir = source_root / 'packs' / effective_pack
+    if not pack_dir.is_dir():
+        pack_dir = source_root / 'profiles' / effective_pack
+
+    # Core directory
+    core_dir = source_root / 'core'
+    core_manifest_file = core_dir / 'manifest.json'
+    core_version = "2.0.0"
+    if core_manifest_file.is_file():
+        try:
+            core_version = json.loads(core_manifest_file.read_text(encoding="utf-8")).get("version", "2.0.0")
+        except Exception:
+            pass
+
+    pack_manifest_file = pack_dir / 'pack.json' if pack_dir.is_dir() else None
+    pack_version = "2.0.0"
+    if pack_manifest_file and pack_manifest_file.is_file():
+        try:
+            pack_version = json.loads(pack_manifest_file.read_text(encoding="utf-8")).get("version", "2.0.0")
+        except Exception:
+            pass
 
     print("===========================================================")
-    print("   Hub & Spoke Agentic Ecosystem Deployer")
-    print(f"   Source  : {source_root}")
-    print(f"   Target  : {target_dir}")
-    print(f"   Profile : {profile.upper()} ({len(allowed_skills) if allowed_skills else 'ALL'} skills)")
-    print(f"   Mode    : {mode}")
+    print("   Hub & Spoke Agentic Ecosystem Deployer (v2 Core + Packs)")
+    print(f"   Source   : {source_root}")
+    print(f"   Target   : {target_dir}")
+    print(f"   Pack     : {effective_pack.upper()} ({len(allowed_skills) if allowed_skills else 'ALL'} skills)")
+    print(f"   Mode     : {mode}")
     print("===========================================================")
+
+    installed_files = []
 
     # 1. Install Skills (.gemini/antigravity/skills and .agents/skills)
     if mode in ('antigravity', 'both'):
@@ -197,7 +222,7 @@ def install_ecosystem(target_dir: Path, mode: str = 'both', profile: str = 'andr
         skills_src = source_root / 'skills'
         if not skills_src.is_dir():
             skills_src = source_root / '.gemini' / 'antigravity' / 'skills'
-        print(f"\n[1] Installing filtered skills for profile '{profile}'...")
+        print(f"\n[1] Installing filtered skills for pack '{effective_pack}'...")
         if skills_src.is_dir():
             copy_dir(skills_src, skills_dst, overwrite, filter_names=allowed_skills)
             agents_skills_dst = target_dir / '.agents' / 'skills'
@@ -211,54 +236,53 @@ def install_ecosystem(target_dir: Path, mode: str = 'both', profile: str = 'andr
 
     # 2. Install SDD Contracts, Schemas, Templates & OpenSpec
     if mode in ('standalone', 'both'):
-        # Universal Schemas (walkthrough is a hub-only test fixture since v2/F1)
-        for folder in ('schemas',):
-            src_f = source_root / folder
-            dst_f = target_dir / folder
-            print(f"\n[2] Installing {folder} to {dst_f}...")
-            copy_dir(src_f, dst_f, overwrite)
+        # Universal Schemas from core/schemas (fallback: schemas/)
+        schemas_src = core_dir / 'schemas' if (core_dir / 'schemas').is_dir() else source_root / 'schemas'
+        dst_schemas = target_dir / 'schemas'
+        print(f"\n[2] Installing schemas from {schemas_src} to {dst_schemas}...")
+        copy_dir(schemas_src, dst_schemas, overwrite)
 
-        # Templates: Profile-tailored or base
+        # Templates: Pack-tailored or core/templates
         tmpl_dst = target_dir / 'templates'
-        if profile_dir.is_dir() and (profile_dir / 'templates').is_dir():
-            tmpl_src = profile_dir / 'templates'
-            print(f"\n[2] Installing profile-tailored templates ({profile}) to {tmpl_dst}...")
+        if pack_dir.is_dir() and (pack_dir / 'templates').is_dir():
+            tmpl_src = pack_dir / 'templates'
+            print(f"\n[2] Installing pack-tailored templates ({effective_pack}) to {tmpl_dst}...")
             copy_dir(tmpl_src, tmpl_dst, overwrite)
         else:
-            tmpl_src = source_root / 'templates'
+            tmpl_src = core_dir / 'templates' if (core_dir / 'templates').is_dir() else source_root / 'templates'
             print(f"\n[2] Installing templates to {tmpl_dst}...")
             copy_dir(tmpl_src, tmpl_dst, overwrite)
 
-        # OpenSpec: Universal contracts + Profile-tailored specs
+        # OpenSpec: Universal contracts + Pack-tailored specs
         openspec_dst = target_dir / 'openspec'
         print(f"\n[2] Installing openspec structure to {openspec_dst}...")
         (openspec_dst / 'changes').mkdir(parents=True, exist_ok=True)
         (openspec_dst / 'archive').mkdir(parents=True, exist_ok=True)
-        contracts_src = source_root / 'openspec' / 'specs' / 'contracts'
+        contracts_src = core_dir / 'contracts' if (core_dir / 'contracts').is_dir() else source_root / 'openspec' / 'specs' / 'contracts'
         if contracts_src.is_dir():
             copy_dir(contracts_src, openspec_dst / 'specs' / 'contracts', overwrite)
-        if profile_dir.is_dir() and (profile_dir / 'openspec' / 'specs').is_dir():
-            print(f"    -> Installing profile living specs from profiles/{profile}/openspec/specs...")
-            copy_dir(profile_dir / 'openspec' / 'specs', openspec_dst / 'specs', overwrite)
+        if pack_dir.is_dir() and (pack_dir / 'openspec' / 'specs').is_dir():
+            print(f"    -> Installing pack living specs from {pack_dir.name}/{effective_pack}/openspec/specs...")
+            copy_dir(pack_dir / 'openspec' / 'specs', openspec_dst / 'specs', overwrite)
         else:
             copy_dir(source_root / 'openspec' / 'specs', openspec_dst / 'specs', overwrite)
 
-        # Copy PROJECT.md ONLY if not already existing (preserve project-specific configuration)
+        # Copy PROJECT.md ONLY if not already existing
         proj_dst = target_dir / 'PROJECT.md'
-        proj_src = profile_dir / 'PROJECT.md' if (profile_dir.is_dir() and (profile_dir / 'PROJECT.md').is_file()) else source_root / 'PROJECT.md'
+        proj_src = pack_dir / 'PROJECT.md' if (pack_dir.is_dir() and (pack_dir / 'PROJECT.md').is_file()) else source_root / 'PROJECT.md'
         if proj_src.exists() and not proj_dst.exists():
-            print(f"    -> Copying profile PROJECT.md to target root...")
+            print(f"    -> Copying pack PROJECT.md to target root...")
             shutil.copy2(proj_src, proj_dst)
         elif proj_dst.exists():
             print(f"    -> Target already has PROJECT.md, preserving existing file.")
 
-        # Copy or update AGENTS.md (Profile-specific if available)
+        # Copy or update AGENTS.md (Pack-specific if available)
         agents_dst = target_dir / 'AGENTS.md'
-        agents_src = profile_dir / 'AGENTS.md' if (profile_dir.is_dir() and (profile_dir / 'AGENTS.md').is_file()) else source_root / 'AGENTS.md'
+        agents_src = pack_dir / 'AGENTS.md' if (pack_dir.is_dir() and (pack_dir / 'AGENTS.md').is_file()) else source_root / 'AGENTS.md'
         if agents_src.exists():
             if not agents_dst.exists() or update_agents:
                 action_str = "Updating" if agents_dst.exists() else "Copying"
-                print(f"    -> {action_str} AGENTS.md ({profile}) in target root...")
+                print(f"    -> {action_str} AGENTS.md ({effective_pack}) in target root...")
                 shutil.copy2(agents_src, agents_dst)
             else:
                 print(f"    -> Target already has AGENTS.md, preserving existing file (pass --update-agents to refresh).")
@@ -267,31 +291,45 @@ def install_ecosystem(target_dir: Path, mode: str = 'both', profile: str = 'andr
         scripts_dst = target_dir / 'scripts'
         scripts_src = source_root / 'scripts'
         copy_dir(scripts_src, scripts_dst, overwrite)
-        if profile_dir.is_dir() and (profile_dir / 'scripts').is_dir():
-            print(f"    -> Installing profile-specific scripts ({profile}) to {scripts_dst}...")
-            copy_dir(profile_dir / 'scripts', scripts_dst, overwrite)
+        if pack_dir.is_dir() and (pack_dir / 'scripts').is_dir():
+            print(f"    -> Installing pack-specific scripts ({effective_pack}) to {scripts_dst}...")
+            copy_dir(pack_dir / 'scripts', scripts_dst, overwrite)
 
         tests_dst = target_dir / 'tests'
         tests_src = source_root / 'tests'
         copy_dir(tests_src, tests_dst, overwrite)
 
-        # Generate profile-tailored .atlassian_config.json.example
-        generate_profile_config(target_dir, profile)
+        # Generate profile/pack-tailored .atlassian_config.json.example
+        generate_profile_config(target_dir, effective_pack)
 
-        # Generate profile-tailored .github/copilot_instructions.md
-        generate_copilot_instructions(target_dir, profile)
+        # Generate profile/pack-tailored .github/copilot_instructions.md
+        generate_copilot_instructions(target_dir, effective_pack)
+
+        # Generate .agentic.lock in target directory
+        lock_data = {
+            "core_version": core_version,
+            "pack": effective_pack,
+            "pack_version": pack_version,
+            "installed_at": datetime.datetime.now(datetime.timezone.utc).isoformat() if hasattr(datetime, 'timezone') else datetime.datetime.utcnow().isoformat(),
+            "mode": mode,
+        }
+        lock_file = target_dir / '.agentic.lock'
+        lock_file.write_text(json.dumps(lock_data, indent=2) + "\n", encoding="utf-8")
+        print(f"    -> Generated .agentic.lock (core={core_version}, pack={effective_pack}@{pack_version})")
 
     print("\n===========================================================")
-    print(f"   🎉 Deployment Complete for Profile: {profile.upper()}")
+    print(f"   🎉 Deployment Complete for Pack: {effective_pack.upper()}")
     print("   Project equipped with Spec-Driven Multi-Agent Governance.")
     print("===========================================================")
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Install and configure Agentic Ecosystem by profile.")
+    parser = argparse.ArgumentParser(description="Install and configure Agentic Ecosystem by pack or profile.")
     parser.add_argument("--target", "-t", required=True, help="Target project root directory")
+    parser.add_argument("--pack", choices=['android', 'backend', 'web', 'all'], default=None,
+                        help="Discipline pack to install: 'android', 'backend', 'web', or 'all'")
     parser.add_argument("--profile", "-p", choices=['android', 'backend', 'web', 'all'], default='android',
-                        help="Platform discipline profile: 'android', 'backend', 'web', or 'all' (default: android)")
+                        help="Platform discipline profile (alias for --pack for backwards compatibility)")
     parser.add_argument("--mode", "-m", choices=['antigravity', 'standalone', 'both'], default='both',
                         help="Installation mode: 'antigravity', 'standalone', or 'both' (default: both)")
     parser.add_argument("--no-overwrite", action='store_true', help="Do not overwrite existing files")
@@ -306,8 +344,10 @@ def main():
         print(f"[FROZEN] Propagation disabled while v2 is in progress. See {freeze_file}")
         sys.exit(2)
     target_path = Path(args.target)
-    install_ecosystem(target_path, mode=args.mode, profile=args.profile, overwrite=not args.no_overwrite, update_agents=args.update_agents)
+    selected_pack = args.pack or args.profile
+    install_ecosystem(target_path, mode=args.mode, profile=selected_pack, overwrite=not args.no_overwrite, update_agents=args.update_agents, pack=selected_pack)
 
 
 if __name__ == '__main__':
     main()
+

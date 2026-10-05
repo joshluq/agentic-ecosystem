@@ -136,16 +136,18 @@ def lint_platform_leakage(target_dir: Path, profile: Optional[str] = None) -> Di
 
     all_violations: List[Dict[str, Any]] = []
 
-    # If it's the ecosystem Hub, check specific profiles directories individually
+    # If it's the ecosystem Hub, check specific packs/profiles directories individually
     if effective_profile == "hub":
-        profiles_dir = target_dir / "profiles"
-        if profiles_dir.is_dir():
+        packs_dir = target_dir / "packs"
+        if not packs_dir.is_dir():
+            packs_dir = target_dir / "profiles"
+        if packs_dir.is_dir():
             for p_name in ["android", "backend", "web"]:
-                p_folder = profiles_dir / p_name
+                p_folder = packs_dir / p_name
                 if p_folder.is_dir():
                     for f in p_folder.rglob("*.md"):
                         all_violations.extend(lint_file_for_profile(f, p_name))
-        effective_profile = "hub (profiles audited)"
+        effective_profile = "hub (packs audited)"
     else:
         # Check AGENTS.md, copilot_instructions.md, and skills
         files_to_check: List[Path] = []

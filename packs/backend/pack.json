@@ -1,0 +1,13 @@
+{
+  "name": "backend",
+  "version": "2.0.0",
+  "description": "Backend discipline pack: Supabase, PostgreSQL RLS, Edge Functions, Deno, and API security governance.",
+  "requires_core": ">=2.0.0",
+  "skills": [
+    "supabase-db-triage",
+    "supabase-edge-functions",
+    "senior-debugging-engineer",
+    "new-feature",
+    "fix-bug"
+  ]
+}

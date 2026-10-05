@@ -1,0 +1,17 @@
+{
+  "name": "android",
+  "version": "2.0.0",
+  "description": "Android discipline pack: Jetpack Compose, Kotlin, FoundationKit MVI, Gradle verification, and device triage.",
+  "requires_core": ">=2.0.0",
+  "skills": [
+    "android-staff-engineer-compose",
+    "android-testing",
+    "android-device",
+    "android-quality",
+    "new-feature",
+    "fix-bug",
+    "performance-optimization-tips",
+    "po-digital-experience-fintech",
+    "senior-debugging-engineer"
+  ]
+}

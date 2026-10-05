@@ -1,0 +1,6 @@
+{
+  "name": "agentic-ecosystem-core",
+  "version": "2.0.0",
+  "description": "Core schemas, shared contract definitions, universal SDD templates and orchestrator specifications for the Agentic Ecosystem.",
+  "schema_version": "2.0.0"
+}

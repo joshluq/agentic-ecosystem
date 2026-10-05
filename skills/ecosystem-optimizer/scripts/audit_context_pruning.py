@@ -193,7 +193,7 @@ def detect_cross_file_redundancies(directives_by_file: Dict[Path, List[Dict[str,
 
     # Sort files so AGENTS.md / copilot_instructions.md act as canonical reference (SSOT)
     def file_priority(p: Path) -> int:
-        if p.name == "AGENTS.md" and "profiles" not in str(p):
+        if p.name == "AGENTS.md" and "profiles" not in str(p) and "packs" not in str(p):
             return 0
         if "copilot_instructions.md" in p.name:
             return 1
@@ -210,10 +210,12 @@ def detect_cross_file_redundancies(directives_by_file: Dict[Path, List[Dict[str,
             file_b = all_files[j]
             dirs_b = directives_by_file[file_b]
 
-            # Don't compare root AGENTS.md with profile AGENTS.md templates
-            if "profiles" in str(file_a) and "profiles" not in str(file_b):
+            # Don't compare root AGENTS.md with profile/pack AGENTS.md templates
+            is_pkg_a = "profiles" in str(file_a) or "packs" in str(file_a)
+            is_pkg_b = "profiles" in str(file_b) or "packs" in str(file_b)
+            if is_pkg_a and not is_pkg_b:
                 continue
-            if "profiles" in str(file_b) and "profiles" not in str(file_a):
+            if is_pkg_b and not is_pkg_a:
                 continue
             if file_a == file_b:
                 continue
@@ -298,8 +300,14 @@ def audit_context_pruning(target_dir: Path) -> Dict[str, Any]:
     instruction_files: List[Path] = []
 
     for name in ["AGENTS.md"]:
-        for candidate in [target_dir / name, target_dir / "profiles" / "android" / name, target_dir / "profiles" / "backend" / name]:
-            if candidate.is_file():
+        for candidate in [
+            target_dir / name,
+            target_dir / "packs" / "android" / name,
+            target_dir / "packs" / "backend" / name,
+            target_dir / "profiles" / "android" / name,
+            target_dir / "profiles" / "backend" / name
+        ]:
+            if candidate.is_file() and candidate not in instruction_files:
                 instruction_files.append(candidate)
 
     copilot_file = target_dir / ".github" / "copilot_instructions.md"

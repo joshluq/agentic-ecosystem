@@ -1,6 +1,6 @@
-# AGENTS.md — Android Lifecycle Agent Role Definitions & Protocols
+# AGENTS.md — Multi-Agent Lifecycle Role Definitions & Protocols
 
-This document defines the specialized agent roles, boundary contracts, operational constraints, chatter elimination protocol, and automated remediation routing for Modern Android application development.
+This document defines the specialized agent roles, boundary contracts, operational constraints, chatter elimination protocol, and automated remediation routing for the Agentic Ecosystem across platforms.
 
 ---
 

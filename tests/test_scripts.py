@@ -443,10 +443,11 @@ Acceptance Criteria:
         self.assertEqual(page["space"], "DEV")
         self.assertEqual(page["id"], "20001")
 
-    # 12. install_to_project.py Hub & Spoke Profiles tests
+    # 12. install_to_project.py Hub & Spoke Profiles/Packs tests
     def test_install_to_project_profiles(self):
-        if not (PROJECT_ROOT / "profiles").is_dir():
-            self.skipTest("Hub-and-spoke multi-profile installation requires hub repository with profiles/ directory.")
+        has_packs = (PROJECT_ROOT / "packs").is_dir() or (PROJECT_ROOT / "profiles").is_dir()
+        if not has_packs:
+            self.skipTest("Hub-and-spoke multi-pack installation requires hub repository with packs/ or profiles/ directory.")
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             tmp_root = Path(tmp_dir)
@@ -513,6 +514,12 @@ Acceptance Criteria:
 
             # Verify scripts installation includes workflow.py
             self.assertTrue((backend_target / "scripts" / "workflow.py").is_file())
+
+            # Verify .agentic.lock in target
+            self.assertTrue((backend_target / ".agentic.lock").is_file())
+            lock_info = json.loads((backend_target / ".agentic.lock").read_text(encoding="utf-8"))
+            self.assertEqual(lock_info["pack"], "backend")
+            self.assertIn("core_version", lock_info)
 
             # Verify .github/copilot_instructions.md for Web
             copilot_web = (web_target / ".github" / "copilot_instructions.md").read_text(encoding="utf-8")
