@@ -1,6 +1,6 @@
 # Atlassian Cloud Integration (Jira & Confluence)
 
-Comprehensive integration guide and CLI reference for connecting the **Android Agentic Ecosystem** with **Atlassian Jira Software** (Kanban/Scrum boards, tickets, status guards, automated defect reporting) and **Atlassian Confluence** (living architecture specifications sync).
+Comprehensive integration guide and CLI reference for connecting the **Agentic Ecosystem** with **Atlassian Jira Software** (Kanban/Scrum boards, tickets, status guards, automated defect reporting) and **Atlassian Confluence** (living architecture specifications sync).
 
 ---
 

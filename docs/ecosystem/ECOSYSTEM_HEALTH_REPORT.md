@@ -1,7 +1,7 @@
 # Ecosystem Health & Optimization Report
 
 **Generated**: `2026-09-30T15:36:29.042372+00:00`  
-**Target**: `C:\Users\josh_\.gemini\antigravity\scratch\android_agentic_ecosystem`  
+**Target**: `C:\Users\josh_\.gemini\antigravity\scratch\agentic_ecosystem`  
 **Profile**: `hub (profiles audited)`  
 **Overall Status**: 🟡 **WARN**
 

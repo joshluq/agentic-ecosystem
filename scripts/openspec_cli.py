@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-openspec_cli.py - OpenSpec CLI Tool for Android Agentic Ecosystem
+openspec_cli.py - OpenSpec CLI Tool for Agentic Ecosystem
 
 Manages living specifications, delta changes, and SDD lifecycles.
 Integrates the OpenSpec 3-phase workflow (Propose -> Apply -> Archive)
-with the Android Agentic Ecosystem's deterministic test harness.
+with the Agentic Ecosystem's deterministic test harness.
 
 Usage:
     python scripts/openspec_cli.py propose FEAT-002 --title "Export PDF Receipts"
@@ -307,7 +307,7 @@ def cmd_list():
 # ==============================================================================
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="OpenSpec Lifecycle CLI for Android Agentic Ecosystem.")
+    parser = argparse.ArgumentParser(description="OpenSpec Lifecycle CLI for Agentic Ecosystem.")
     subparsers = parser.add_subparsers(dest="command", help="OpenSpec command to execute")
 
     # propose

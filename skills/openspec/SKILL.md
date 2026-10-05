@@ -5,7 +5,7 @@ description: Manages living specifications, delta changes, and SDD lifecycles ac
 
 # OpenSpec - Living Specifications & Delta Lifecycle
 
-This skill integrates the **OpenSpec** (`openspec.dev`) standard into the **Android Agentic Ecosystem**. It bridges the gap between high-level human requirements and deterministic multi-agent execution, organizing all specifications into **Living Specs** (`openspec/specs/`) and manageable **Delta Changes** (`openspec/changes/<change_id>/`).
+This skill integrates the **OpenSpec** (`openspec.dev`) standard into the **Agentic Ecosystem**. It bridges the gap between high-level human requirements and deterministic multi-agent execution, organizing all specifications into **Living Specs** (`openspec/specs/`) and manageable **Delta Changes** (`openspec/changes/<change_id>/`).
 
 ---
 
@@ -33,7 +33,7 @@ This skill integrates the **OpenSpec** (`openspec.dev`) standard into the **Andr
 
 ## 2. Available Commands & Tooling
 
-The skill is backed by the CLI tool [`scripts/openspec_cli.py`](file:///C:/Users/josh_/.gemini/antigravity/scratch/android_agentic_ecosystem/scripts/openspec_cli.py):
+The skill is backed by the CLI tool [`scripts/openspec_cli.py`](file:///C:/Users/josh_/.gemini/antigravity/scratch/agentic_ecosystem/scripts/openspec_cli.py):
 
 ### 2.1 Propose a New Change:
 ```bash

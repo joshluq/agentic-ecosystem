@@ -10,7 +10,7 @@ from scripts.run_walkthrough import run as run_walkthrough
 
 def main():
     print('===============================================================')
-    print('   ANDROID AGENTIC ECOSYSTEM — MASTER VERIFICATION RUNNER')
+    print('   AGENTIC ECOSYSTEM — MASTER VERIFICATION RUNNER')
     print('===============================================================')
 
     print('\n[1/3] Running Skill, Contract, and Walkthrough Unittest Suite...')

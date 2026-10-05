@@ -1,7 +1,7 @@
-# Project: Android Agentic Ecosystem
+# Project: Agentic Ecosystem
 
 ## Architecture
-The Android Agentic Ecosystem is a modular, role-based multi-agent framework and starter template for Modern Android application development (Kotlin, Jetpack Compose, Coroutines, StateFlow, Clean Architecture).
+The Agentic Ecosystem is a modular, role-based multi-agent framework and starter template for Modern Android application development (Kotlin, Jetpack Compose, Coroutines, StateFlow, Clean Architecture).
 
 ### Core Components
 1. **Agent Roles and Contract Handoffs (`AGENTS.md`, `templates/`, `schemas/`)**:
@@ -84,7 +84,7 @@ The Android Agentic Ecosystem is a modular, role-based multi-agent framework and
 
 ## Code Layout
 ```
-android_agentic_ecosystem/
+agentic_ecosystem/
 ├── AGENTS.md                                 # Primary lifecycle role definitions
 ├── PROJECT.md                                # Master project architecture & status
 ├── README.md                                 # Ecosystem overview, architecture & usage

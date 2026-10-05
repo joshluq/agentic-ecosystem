@@ -37,7 +37,7 @@ Each platform profile must maintain strict technical boundaries without contamin
 - Asserts that every change in `openspec/changes/` preserves bidirectional links between PO requirements (`FR-xx`, `AC-xx`), Architectural specifications (`ADR-xx`, `COMP-SPEC-xx`), and QA test assertions.
 
 ### 1.4 Hub-to-Spoke Synchronization
-- Audits that satellite repositories (`KmSafe`, `kilomenos`) are in sync with the canonical schemas, shared skills, and workflow orchestrators in the base hub repository (`android_agentic_ecosystem`).
+- Audits that satellite repositories (`KmSafe`, `kilomenos`) are in sync with the canonical schemas, shared skills, and workflow orchestrators in the base hub repository (`agentic_ecosystem`).
 
 ---
 

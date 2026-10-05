@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-atlassian_bridge.py - Jira & Confluence Integration Bridge for Android Agentic Ecosystem
+atlassian_bridge.py - Jira & Confluence Integration Bridge for Agentic Ecosystem
 
 Connects the multi-agent ecosystem (PO, Architect, Dev, QA, Debugger) to:
 1. Jira Software: Ingest user stories, update task checklists, create crash bug tickets,
@@ -611,7 +611,7 @@ def cmd_sync_confluence(client: AtlassianClient, space_key: str):
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Jira & Confluence Integration Bridge for Android Agentic Ecosystem."
+        description="Jira & Confluence Integration Bridge for Agentic Ecosystem."
     )
     parser.add_argument("--url", help="Atlassian Cloud URL (e.g. https://domain.atlassian.net)")
     parser.add_argument("--email", help="Atlassian Account Email")

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Android Agentic Ecosystem - Project Installer & Hub-and-Spoke Deployer
+Agentic Ecosystem - Project Installer & Hub-and-Spoke Deployer
 
 Bootstraps the Agentic Ecosystem (Core Governance, Schemas, Templates, Atlassian Bridge, OpenSpec)
 into any target repository with platform-specific discipline profiles:
@@ -297,7 +297,14 @@ def main():
     parser.add_argument("--no-overwrite", action='store_true', help="Do not overwrite existing files")
     parser.add_argument("--update-agents", action='store_true', help="Overwrite AGENTS.md with the latest ecosystem role specifications")
 
+    parser.add_argument("--force-during-freeze", action='store_true',
+                        help="Bypass PROPAGATION_FREEZE.md (v2 in progress). Not recommended.")
+
     args = parser.parse_args()
+    freeze_file = Path(__file__).resolve().parent.parent / "PROPAGATION_FREEZE.md"
+    if freeze_file.exists() and not args.force_during_freeze:
+        print(f"[FROZEN] Propagation disabled while v2 is in progress. See {freeze_file}")
+        sys.exit(2)
     target_path = Path(args.target)
     install_ecosystem(target_path, mode=args.mode, profile=args.profile, overwrite=not args.no_overwrite, update_agents=args.update_agents)
 

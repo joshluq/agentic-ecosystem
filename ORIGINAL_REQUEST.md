@@ -4,7 +4,7 @@
 
 Build a modular agentic framework and starter template for Android application development, comprising role definitions (AGENTS.md), runnable skills (SKILL.md with CLI/testing helpers), and structured handoff protocols for an Android developer's daily workflow.
 
-Working directory: C:\Users\josh_\.gemini\antigravity\scratch\android_agentic_ecosystem
+Working directory: C:\Users\josh_\.gemini\antigravity\scratch\agentic_ecosystem
 Integrity mode: demo
 
 ## Requirements

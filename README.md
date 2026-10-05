@@ -1,7 +1,7 @@
-# Android Agentic Ecosystem 🤖📱
+# Agentic Ecosystem 🤖📱
 > **A Production-Grade Multi-Agent Framework for Modern Android Development powered by Spec-Driven Development (SDD), Deterministic Test Harnesses, and Autonomous Role Specialization.**
 
-[![CI Verification](https://github.com/joshluq/android-agentic-ecosystem/actions/workflows/agentic-verification.yml/badge.svg)](https://github.com/joshluq/android-agentic-ecosystem/actions)
+[![CI Verification](https://github.com/joshluq/agentic-ecosystem/actions/workflows/agentic-verification.yml/badge.svg)](https://github.com/joshluq/agentic-ecosystem/actions)
 [![Python Version](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![Android Version](https://img.shields.io/badge/Android-API%2026%2B-brightgreen.svg)](https://developer.android.com)
 [![Architecture](https://img.shields.io/badge/Architecture-Clean%20%2F%20MVI%20%2F%20Compose-orange.svg)](AGENTS.md)
@@ -11,7 +11,7 @@
 
 ## 🌟 Executive Overview
 
-The **Android Agentic Ecosystem** transforms AI-assisted Android software engineering from stochastic, hallucination-prone chat into a **deterministic, verifiable engineering pipeline**. 
+The **Agentic Ecosystem** transforms AI-assisted Android software engineering from stochastic, hallucination-prone chat into a **deterministic, verifiable engineering pipeline**. 
 
 By orchestrating specialized agents through **machine-readable JSON Schema contracts**, structured **Markdown design specifications**, and an automated **Verification Harness**, it eliminates communication ambiguity and guarantees production-grade Jetpack Compose, Kotlin Multiplatform, and Clean Architecture standards.
 
@@ -100,7 +100,7 @@ Each skill folder in [`skills/`](skills/) defines a first-class Antigravity slas
 ## 📂 Repository Directory Layout
 
 ```
-android-agentic-ecosystem/
+agentic-ecosystem/
 ├── .github/
 │   └── workflows/
 │       └── agentic-verification.yml       # Continuous Integration workflow
@@ -172,7 +172,7 @@ python -m unittest discover -s tests -p "test_*.py"
 Expected output:
 ```text
 ===============================================================
-   ANDROID AGENTIC ECOSYSTEM — MASTER VERIFICATION RUNNER
+   AGENTIC ECOSYSTEM — MASTER VERIFICATION RUNNER
 ===============================================================
 
 [1/3] Running Skill, Contract, and Walkthrough Unittest Suite...
@@ -198,10 +198,10 @@ You can install this entire agentic ecosystem into your existing Android apps (e
 
 ```bash
 # Clone the ecosystem repository
-git clone https://github.com/joshluq/android-agentic-ecosystem.git
+git clone https://github.com/joshluq/agentic-ecosystem.git
 
 # Run the bootstrapper pointing to your Android project:
-python android-agentic-ecosystem/scripts/install_to_project.py --target /path/to/YourAndroidApp
+python agentic-ecosystem/scripts/install_to_project.py --target /path/to/YourAndroidApp
 ```
 
 ### Installation Modes
