@@ -22,8 +22,8 @@
 | **F0** Gobierno y renombrado | Aislar la v2 y quitar "android" del nombre | Rama `v2`, freeze, renombrado de referencias internas, carpeta local y repo GitHub renombrados | Tests verdes; carpeta y remote con el nombre nuevo | ✅ Completada |
 | **F1** Higiene | Quitar ruido del workspace | `.agents/`, `walkthrough/` y tests de estrés fuera de la ruta de exploración; deduplicar `ORIGINAL_REQUEST.md`; separar README humano de instrucciones del agente | Huella de archivos explorables reducida ≥50 % | ✅ Completada |
 | **F2** Núcleo + packs | Reestructurar a `core/` + `packs/{android,backend,web}` | Movimiento de archivos, `install_to_project.py --pack`, `schema_version`, `requires_core`, `.agentic.lock` | Instalar el pack android no copia nada de backend/web | ✅ Completada |
-| **F3** Adelgazar instrucciones (P3) | Índice `AGENTS.md` ≤3k tokens | `core/AGENTS.md` (índice), `packs/*/roles/*.md`, `packs/*/examples/` (few-shot reales), skills recortados | Prefijo por etapa ≤4k tokens (auditado) | 🟡 Siguiente |
-| **F4** Aislamiento de etapas (P1) | Una sesión o subagente por rol | `context_manifest` por etapa en `workflow.py`; subagentes que devuelven ruta + resumen de ≤200 tokens; workers de triage | Contexto en QA ≤30k tokens en un feature piloto | ⬜ |
+| **F3** Adelgazar instrucciones (P3) | Índice `AGENTS.md` ≤3k tokens | `core/AGENTS.md` (índice), `packs/*/roles/*.md`, `packs/*/examples/` (few-shot reales), skills recortados | Prefijo por etapa ≤4k tokens (auditado) | ✅ Completada |
+| **F4** Aislamiento de etapas (P1) | Una sesión o subagente por rol | `context_manifest` por etapa en `workflow.py`; subagentes que devuelven ruta + resumen de ≤200 tokens; workers de triage | Contexto en QA ≤30k tokens en un feature piloto | 🟡 Siguiente |
 | **F5** Modelos y FinOps (P2 + P5) | Routing de modelos y telemetría | `models.yaml`; campo `telemetry` en los handoffs; presupuesto por etapa en CI | Comparativa antes/después en 2–3 features | ⬜ |
 | **F6** Release v2 | Merge y propagación controlada | Merge `v2 → main`, borrar `PROPAGATION_FREEZE.md`, guía de migración para spokes, tag `v2.0.0` | Spoke piloto migrado sin incidencias | ⬜ |
 
@@ -43,6 +43,13 @@
 - [x] Migración de `profiles/` a `packs/{android, backend, web}` con sus respectivos `pack.json` y `requires_core: ">=2.0.0"`.
 - [x] Soporte `--pack` en `install_to_project.py` (manteniendo retrocompatibilidad `--profile`), aislamiento estricto de skills por pack y generación de `.agentic.lock`.
 - [x] Actualización de linters y auditores (`audit_context_budget.py`, `lint_platform_leakage.py`, `audit_context_pruning.py`, `test_scripts.py`, `test_contracts.py`) para reconocer la arquitectura `core/` + `packs/`.
+
+## Entregables F3
+- [x] `AGENTS.md` raíz y `core/AGENTS.md` reducidos a un índice lean de ~860 palabras (~1.6k tokens, muy por debajo de la meta de 3k).
+- [x] Roles específicos extraídos modularmente a `packs/<pack>/roles/*.md`.
+- [x] Ejemplos few-shot canónicos creados en `packs/android/examples/`.
+- [x] Skill con sobrepeso (`android-staff-engineer-compose`) adelgazado a ~400 palabras (< 1200 palabras límite).
+- [x] Auditoría de presupuesto de contexto en verde/tolerancia sin fallos.
 
 ## Registro de decisiones
 | Fecha | Decisión | Referencia |
