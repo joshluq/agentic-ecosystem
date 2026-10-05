@@ -60,6 +60,109 @@ except ImportError:
 # 1. PROFILE DETECTION & PLATFORM TEMPLATES
 # ==============================================================================
 
+# ==============================================================================
+# 1. STAGE CONTEXT ISOLATION & MANIFEST (P1 / F4)
+# ==============================================================================
+
+STAGE_CONTEXT_RULES = {
+    "po": {
+        "allowed_skills": ["openspec", "po-digital-experience-fintech", "atlassian-bridge", "idea-lab"],
+        "core_files": ["core/schemas/po_to_architect_handoff.schema.json", "templates/prd-template.md"],
+        "max_context_tokens": 12000,
+        "role_name": "Product Owner",
+        "description": "Formulate functional requirements, ACs in Given/When/Then, and NFRs without technical architecture or code."
+    },
+    "architect": {
+        "allowed_skills": ["openspec", "atlassian-bridge", "android-staff-engineer-compose", "supabase-edge-functions"],
+        "core_files": ["core/schemas/architect_to_dev_handoff.schema.json", "templates/adr-template.md", "templates/component-spec-template.md"],
+        "max_context_tokens": 16000,
+        "role_name": "Software Architect",
+        "description": "Establish architecture ADR, component specs, immutable state models, and UDF contracts."
+    },
+    "dev": {
+        "allowed_skills": ["android-staff-engineer-compose", "senior-debugging-engineer", "fix-bug"],
+        "core_files": ["core/schemas/dev_to_qa_handoff.schema.json", "core/schemas/dev_to_architect_escalation.schema.json"],
+        "max_context_tokens": 20000,
+        "role_name": "Senior Developer",
+        "description": "Implement production code and developer tests strictly satisfying architectural contract."
+    },
+    "qa": {
+        "allowed_skills": ["android-testing", "android-quality", "android-device", "senior-debugging-engineer"],
+        "core_files": ["core/schemas/qa_verdict_handoff.schema.json", "templates/qa-report-template.md"],
+        "max_context_tokens": 24000,
+        "role_name": "QA / Testing Engineer",
+        "description": "Verify 100% Acceptance Criteria independently through automated tests without ghost code."
+    }
+}
+
+
+def get_stage_context_manifest(stage: str, change_id: str, profile: str = "android") -> Dict[str, Any]:
+    """Generates an isolated context manifest for a specific lifecycle role/stage.
+    Prevents token bloat by whitelisting only the files, contracts, and skills necessary for that stage."""
+    rules = STAGE_CONTEXT_RULES.get(stage.lower(), STAGE_CONTEXT_RULES["dev"])
+    change_dir = CHANGES_DIR / change_id
+
+    input_files: List[str] = [f for f in rules["core_files"] if (ROOT_DIR / f).is_file()]
+
+    # Stage-specific artifacts
+    if stage == "po":
+        input_files.append(f"openspec/changes/{change_id}/proposal.md")
+    elif stage == "architect":
+        input_files.extend([
+            f"openspec/changes/{change_id}/proposal.md",
+            f"handoffs/po_to_architect_{change_id}.json",
+            f"openspec/changes/{change_id}/design.md"
+        ])
+    elif stage == "dev":
+        input_files.extend([
+            f"openspec/changes/{change_id}/design.md",
+            f"handoffs/architect_to_dev_{change_id}.json",
+            f"openspec/changes/{change_id}/tasks.md"
+        ])
+    elif stage == "qa":
+        input_files.extend([
+            f"openspec/changes/{change_id}/proposal.md",
+            f"openspec/changes/{change_id}/design.md",
+            f"handoffs/dev_to_qa_{change_id}.json"
+        ])
+
+    # Platform role file
+    pack_role = ROOT_DIR / "packs" / profile / "roles" / f"{rules['role_name'].lower().replace(' ', '_')}.md"
+    if pack_role.is_file():
+        input_files.append(str(pack_role.relative_to(ROOT_DIR)).replace("\\", "/"))
+
+    manifest = {
+        "stage": stage.lower(),
+        "role": rules["role_name"],
+        "change_id": change_id,
+        "profile": profile,
+        "max_context_tokens": rules["max_context_tokens"],
+        "allowed_skills": rules["allowed_skills"],
+        "allowed_input_files": [f for f in input_files if (ROOT_DIR / f).is_file() or (ROOT_DIR / f).is_dir() or str(change_id) in f],
+        "output_format": "Return ONLY the target artifact path and a human summary of <= 200 tokens."
+    }
+    return manifest
+
+
+def generate_subagent_dispatch_prompt(stage: str, change_id: str, profile: str = "android") -> str:
+    """Generates the minimal zero-chatter dispatch prompt for a subagent execution session."""
+    manifest = get_stage_context_manifest(stage, change_id, profile)
+    prompt = f"""[ROLE: {manifest['role']}]
+Change ID: {change_id}
+Platform: {profile.upper()}
+Mission: {STAGE_CONTEXT_RULES[stage]['description']}
+
+Strict Context Boundaries:
+- Allowed Skills: {', '.join(manifest['allowed_skills'])}
+- Required Files:
+"""
+    for f in manifest['allowed_input_files']:
+        prompt += f"  - {f}\n"
+
+    prompt += f"\nDirective: {manifest['output_format']}"
+    return prompt.strip()
+
+
 def detect_platform_profile(target_dir: Path) -> str:
     """Detects active platform profile from project topology."""
     if (target_dir / "settings.gradle.kts").is_file() or (target_dir / "build.gradle.kts").is_file():
@@ -976,6 +1079,14 @@ def build_parser() -> argparse.ArgumentParser:
     p_audit.add_argument("--json", action="store_true", help="Output results in JSON format")
     p_audit.add_argument("--no-spokes", action="store_true", help="Skip satellite spoke parity check")
 
+    # manifest
+    p_manifest = subparsers.add_parser("manifest", help="Emit isolated context manifest and subagent dispatch prompt for a role/stage.")
+    p_manifest.add_argument("change_id", help="Jira ticket key or custom change ID")
+    p_manifest.add_argument("--stage", required=True, choices=["po", "architect", "dev", "qa"], help="Lifecycle stage / role")
+    p_manifest.add_argument("--profile", default="android", choices=["android", "backend", "web", "all"], help="Platform discipline profile")
+    p_manifest.add_argument("--json", action="store_true", help="Output raw JSON manifest")
+    p_manifest.add_argument("--prompt", action="store_true", help="Output minimal zero-chatter subagent dispatch prompt")
+
     return parser
 
 
@@ -1032,6 +1143,14 @@ def main():
             no_spokes=args.no_spokes
         )
         sys.exit(0 if success else 1)
+    elif args.command == "manifest":
+        if args.prompt:
+            prompt = generate_subagent_dispatch_prompt(args.stage, args.change_id, args.profile)
+            print(prompt)
+        else:
+            manifest = get_stage_context_manifest(args.stage, args.change_id, args.profile)
+            print(json.dumps(manifest, indent=2))
+        sys.exit(0)
 
 
 if __name__ == "__main__":

@@ -23,8 +23,8 @@
 | **F1** Higiene | Quitar ruido del workspace | `.agents/`, `walkthrough/` y tests de estrés fuera de la ruta de exploración; deduplicar `ORIGINAL_REQUEST.md`; separar README humano de instrucciones del agente | Huella de archivos explorables reducida ≥50 % | ✅ Completada |
 | **F2** Núcleo + packs | Reestructurar a `core/` + `packs/{android,backend,web}` | Movimiento de archivos, `install_to_project.py --pack`, `schema_version`, `requires_core`, `.agentic.lock` | Instalar el pack android no copia nada de backend/web | ✅ Completada |
 | **F3** Adelgazar instrucciones (P3) | Índice `AGENTS.md` ≤3k tokens | `core/AGENTS.md` (índice), `packs/*/roles/*.md`, `packs/*/examples/` (few-shot reales), skills recortados | Prefijo por etapa ≤4k tokens (auditado) | ✅ Completada |
-| **F4** Aislamiento de etapas (P1) | Una sesión o subagente por rol | `context_manifest` por etapa en `workflow.py`; subagentes que devuelven ruta + resumen de ≤200 tokens; workers de triage | Contexto en QA ≤30k tokens en un feature piloto | 🟡 Siguiente |
-| **F5** Modelos y FinOps (P2 + P5) | Routing de modelos y telemetría | `models.yaml`; campo `telemetry` en los handoffs; presupuesto por etapa en CI | Comparativa antes/después en 2–3 features | ⬜ |
+| **F4** Aislamiento de etapas (P1) | Una sesión o subagente por rol | `context_manifest` por etapa en `workflow.py`; subagentes que devuelven ruta + resumen de ≤200 tokens; workers de triage | Contexto en QA ≤30k tokens en un feature piloto | ✅ Completada |
+| **F5** Modelos y FinOps (P2 + P5) | Routing de modelos y telemetría | `models.yaml`; campo `telemetry` en los handoffs; presupuesto por etapa en CI | Comparativa antes/después en 2–3 features | 🟡 Siguiente |
 | **F6** Release v2 | Merge y propagación controlada | Merge `v2 → main`, borrar `PROPAGATION_FREEZE.md`, guía de migración para spokes, tag `v2.0.0` | Spoke piloto migrado sin incidencias | ⬜ |
 
 ## Pendientes F0
@@ -50,6 +50,13 @@
 - [x] Ejemplos few-shot canónicos creados en `packs/android/examples/`.
 - [x] Skill con sobrepeso (`android-staff-engineer-compose`) adelgazado a ~400 palabras (< 1200 palabras límite).
 - [x] Auditoría de presupuesto de contexto en verde/tolerancia sin fallos.
+
+## Entregables F4
+- [x] Mecanismo de manifiesto de contexto por etapa implementado en `scripts/workflow.py`: `get_stage_context_manifest` (roles PO, Architect, Dev, QA).
+- [x] Generador de prompt de subagente zero-chatter: `generate_subagent_dispatch_prompt` que limita la respuesta a la ruta del artefacto y un resumen de $\le 200$ tokens.
+- [x] Subcomando CLI `python scripts/workflow.py manifest <CHANGE_ID> --stage <po|architect|dev|qa> [--prompt]` para orquestadores y agentes.
+- [x] Suite de tests unitarios actualizada en `tests/test_scripts.py` verificando el manifiesto y prompt de subagente.
+
 
 ## Registro de decisiones
 | Fecha | Decisión | Referencia |

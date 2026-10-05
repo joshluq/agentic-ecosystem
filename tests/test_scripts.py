@@ -610,6 +610,16 @@ Acceptance Criteria:
             archive_dir = self.workflow.ARCHIVE_DIR / change_id
             self.assertTrue(archive_dir.is_dir())
 
+            # 5. Test Stage Context Manifest and Dispatch Prompt (P1 / F4)
+            manifest_po = self.workflow.get_stage_context_manifest("po", change_id, profile="android")
+            self.assertEqual(manifest_po["stage"], "po")
+            self.assertIn("openspec", manifest_po["allowed_skills"])
+            self.assertLessEqual(manifest_po["max_context_tokens"], 12000)
+
+            prompt_qa = self.workflow.generate_subagent_dispatch_prompt("qa", change_id, profile="android")
+            self.assertIn("[ROLE: QA / Testing Engineer]", prompt_qa)
+            self.assertIn("Return ONLY the target artifact path and a human summary of <= 200 tokens.", prompt_qa)
+
         finally:
             # Clean up test artifacts
             import shutil
