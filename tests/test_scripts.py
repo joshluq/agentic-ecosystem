@@ -741,6 +741,35 @@ Acceptance Criteria:
             for f in (self.workflow.ROOT_DIR / "handoffs").glob(f"*{change_id}*"):
                 f.unlink(missing_ok=True)
 
+    def test_model_routing_and_finops(self):
+        """Tests model routing matrix, FinOps cost computation, and telemetry derivation."""
+        # 1. Routing check
+        routing_po = self.workflow.get_model_routing_for_stage("po")
+        self.assertEqual(routing_po["role_key"], "product_owner")
+        self.assertEqual(routing_po["tier"], "frontier_reasoning")
+        self.assertIn("claude-3-7-sonnet", routing_po["preferred_models"])
+
+        routing_dev = self.workflow.get_model_routing_for_stage("dev")
+        self.assertEqual(routing_dev["role_key"], "senior_developer")
+        self.assertEqual(routing_dev["tier"], "frontier_coding")
+
+        # 2. Cost calculation check
+        cost = self.workflow.calculate_finops_cost(
+            tier="frontier_reasoning",
+            input_tokens=1000,
+            output_tokens=500,
+            cached_tokens=2000
+        )
+        self.assertGreater(cost, 0.0)
+
+        # 3. Telemetry structure check
+        telem = self.workflow.build_default_telemetry("qa")
+        self.assertIn("model", telem)
+        self.assertIn("input_tokens", telem)
+        self.assertIn("output_tokens", telem)
+        self.assertIn("estimated_cost_usd", telem)
+        self.assertGreater(telem["estimated_cost_usd"], 0.0)
+
 
 if __name__ == "__main__":
     unittest.main()

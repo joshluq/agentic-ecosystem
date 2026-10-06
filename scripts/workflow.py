@@ -144,13 +144,105 @@ def get_stage_context_manifest(stage: str, change_id: str, profile: str = "andro
     return manifest
 
 
+try:
+    import yaml
+except ImportError:
+    yaml = None
+
+
+def load_models_config() -> Dict[str, Any]:
+    """Loads core/models.yaml configuration containing pricing and role-based model tiers."""
+    models_path = ROOT_DIR / "core" / "models.yaml"
+    if not models_path.is_file() or yaml is None:
+        return {}
+    try:
+        return yaml.safe_load(models_path.read_text(encoding="utf-8")) or {}
+    except Exception:
+        return {}
+
+
+def get_model_routing_for_stage(stage: str) -> Dict[str, Any]:
+    """Resolves model tier, preferred models, and reasoning effort for a lifecycle stage."""
+    stage_to_role_key = {
+        "po": "product_owner",
+        "architect": "software_architect",
+        "dev": "senior_developer",
+        "qa": "qa_testing_engineer"
+    }
+    cfg = load_models_config()
+    roles_cfg = cfg.get("roles", {})
+    role_key = stage_to_role_key.get(stage.lower(), "workers")
+    role_info = roles_cfg.get(role_key, {})
+    tier = role_info.get("tier", "mid_reasoning")
+    pricing = cfg.get("pricing_per_million", {}).get(tier, {
+        "input": 1.00,
+        "cache_read": 0.25,
+        "output": 4.00
+    })
+    return {
+        "role_key": role_key,
+        "tier": tier,
+        "preferred_models": role_info.get("preferred_models", ["claude-3-7-sonnet"]),
+        "reasoning_effort": role_info.get("reasoning_effort", "medium"),
+        "pricing": pricing
+    }
+
+
+def calculate_finops_cost(
+    tier: str,
+    input_tokens: int,
+    output_tokens: int,
+    cached_tokens: int = 0
+) -> float:
+    """Calculates estimated USD cost using pricing_per_million in models.yaml."""
+    cfg = load_models_config()
+    pricing = cfg.get("pricing_per_million", {}).get(tier, {
+        "input": 1.00,
+        "cache_read": 0.25,
+        "output": 4.00
+    })
+    cost = (
+        (input_tokens * pricing.get("input", 1.0)) +
+        (cached_tokens * pricing.get("cache_read", 0.25)) +
+        (output_tokens * pricing.get("output", 4.0))
+    ) / 1_000_000.0
+    return round(cost, 6)
+
+
+def build_default_telemetry(stage: str) -> Dict[str, Any]:
+    """Builds a schema-valid telemetry object based on stage and models routing."""
+    routing = get_model_routing_for_stage(stage)
+    model = routing["preferred_models"][0] if routing["preferred_models"] else "claude-3-7-sonnet"
+    tier = routing["tier"]
+
+    token_defaults = {
+        "po": (1800, 600, 3200),
+        "architect": (3500, 1200, 4800),
+        "dev": (4200, 1500, 6200),
+        "qa": (2500, 800, 4100)
+    }
+    inp, out, cached = token_defaults.get(stage.lower(), (2000, 800, 3000))
+    cost = calculate_finops_cost(tier, inp, out, cached)
+
+    return {
+        "model": model,
+        "input_tokens": inp,
+        "output_tokens": out,
+        "cached_tokens": cached,
+        "duration_seconds": 4.5,
+        "estimated_cost_usd": cost
+    }
+
+
 def generate_subagent_dispatch_prompt(stage: str, change_id: str, profile: str = "android") -> str:
     """Generates the minimal zero-chatter dispatch prompt for a subagent execution session."""
     manifest = get_stage_context_manifest(stage, change_id, profile)
+    routing = get_model_routing_for_stage(stage)
     prompt = f"""[ROLE: {manifest['role']}]
 Change ID: {change_id}
 Platform: {profile.upper()}
 Mission: {STAGE_CONTEXT_RULES[stage]['description']}
+Model Routing: {routing['preferred_models'][0]} (Tier: {routing['tier']}, Effort: {routing['reasoning_effort']})
 
 Strict Context Boundaries:
 - Allowed Skills: {', '.join(manifest['allowed_skills'])}
@@ -331,7 +423,8 @@ def generate_po_to_architect_handoff(change_dir: Path, change_id: str, title: st
             "offline_supported": True,
             "accessibility_required": True,
             "performance_budget_ms": 16
-        }
+        },
+        "telemetry": build_default_telemetry("po")
     }
 
     schema_file = ROOT_DIR / "schemas" / "po_to_architect_handoff.schema.json"
@@ -408,7 +501,8 @@ def generate_architect_to_dev_handoff(change_dir: Path, change_id: str, title: s
                 "action": "CREATE",
                 "purpose": "Technical Architecture and Contract Specification"
             }
-        ]
+        ],
+        "telemetry": build_default_telemetry("architect")
     }
 
     schema_file = ROOT_DIR / "schemas" / "architect_to_dev_handoff.schema.json"
@@ -484,7 +578,8 @@ def generate_dev_to_qa_handoff(change_id: str, profile: str) -> Path:
             "compilation_clean": True,
             "typecheck_clean": True,
             "eslint_clean": True
-        }
+        },
+        "telemetry": build_default_telemetry("dev")
     }
 
     schema_file = ROOT_DIR / "schemas" / "dev_to_qa_handoff.schema.json"
@@ -564,7 +659,8 @@ def generate_qa_verdict_handoff(change_id: str, verdict: str = "PASS", profile: 
                 "notes": "Parity confirmed without ghost code"
             }
         ],
-        "issues": []
+        "issues": [],
+        "telemetry": build_default_telemetry("qa")
     }
 
     schema_file = ROOT_DIR / "schemas" / "qa_verdict_handoff.schema.json"

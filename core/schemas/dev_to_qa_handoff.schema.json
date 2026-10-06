@@ -174,6 +174,19 @@
         }
       },
       "additionalProperties": false
+    },
+    "telemetry": {
+      "type": "object",
+      "description": "FinOps telemetry: tokens, model, latency, and estimated cost.",
+      "properties": {
+        "model": { "type": "string" },
+        "input_tokens": { "type": "integer", "minimum": 0 },
+        "output_tokens": { "type": "integer", "minimum": 0 },
+        "cached_tokens": { "type": "integer", "minimum": 0 },
+        "duration_seconds": { "type": "number", "minimum": 0 },
+        "estimated_cost_usd": { "type": "number", "minimum": 0 }
+      },
+      "additionalProperties": false
     }
   },
   "additionalProperties": false

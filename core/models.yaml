@@ -1,0 +1,75 @@
+# models.yaml — Role-Based Model Routing and FinOps Configuration
+# Establishes token pricing and model tiers aligned with prompt caching and reasoning requirements.
+
+version: "2.0.0"
+
+pricing_per_million:
+  frontier_reasoning:
+    input: 5.00
+    cache_read: 1.25
+    output: 15.00
+  frontier_coding:
+    input: 3.00
+    cache_read: 0.75
+    output: 12.00
+  mid_reasoning:
+    input: 1.00
+    cache_read: 0.25
+    output: 4.00
+  lightweight_flash:
+    input: 0.15
+    cache_read: 0.0375
+    output: 0.60
+
+roles:
+  product_owner:
+    tier: frontier_reasoning
+    preferred_models:
+      - "claude-3-7-sonnet"
+      - "gemini-2.5-pro"
+      - "gpt-4o"
+    reasoning_effort: "medium"
+    rationale: "Resolves requirement ambiguity, edge cases, and strict Given/When/Then acceptance criteria."
+
+  solutions_architect:
+    tier: frontier_reasoning
+    preferred_models:
+      - "claude-3-7-sonnet"
+      - "gemini-2.5-pro"
+      - "o1"
+    reasoning_effort: "high"
+    rationale: "Macro-architecture and cross-platform contracts. Errors here propagate to all downstream roles."
+
+  software_architect:
+    tier: frontier_reasoning
+    preferred_models:
+      - "claude-3-7-sonnet"
+      - "gemini-2.5-pro"
+    reasoning_effort: "high"
+    rationale: "Defines immutable state models, sealed action hierarchies, and UDF boundaries."
+
+  senior_developer:
+    tier: frontier_coding
+    preferred_models:
+      - "claude-3-7-sonnet"
+      - "gemini-2.5-flash"
+      - "deepseek-coder"
+    reasoning_effort: "low"
+    rationale: "Translates strict architectural specifications into idiomatic production code and unit tests."
+
+  qa_testing_engineer:
+    tier: mid_reasoning
+    preferred_models:
+      - "claude-3-5-sonnet"
+      - "gemini-2.5-flash"
+    reasoning_effort: "medium"
+    rationale: "Evaluates 100% acceptance criteria coverage, UI semantics tree, and failure root cause targeting."
+
+  workers:
+    tier: lightweight_flash
+    preferred_models:
+      - "gemini-2.5-flash"
+      - "gpt-4o-mini"
+      - "claude-3-5-haiku"
+    reasoning_effort: "none"
+    rationale: "High-volume repetitive tasks: test scaffolding, lint triage, logcat triage, Jira comments, and formatting."

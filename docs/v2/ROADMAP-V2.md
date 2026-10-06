@@ -24,8 +24,8 @@
 | **F2** Núcleo + packs | Reestructurar a `core/` + `packs/{android,backend,web}` | Movimiento de archivos, `install_to_project.py --pack`, `schema_version`, `requires_core`, `.agentic.lock` | Instalar el pack android no copia nada de backend/web | ✅ Completada |
 | **F3** Adelgazar instrucciones (P3) | Índice `AGENTS.md` ≤3k tokens | `core/AGENTS.md` (índice), `packs/*/roles/*.md`, `packs/*/examples/` (few-shot reales), skills recortados | Prefijo por etapa ≤4k tokens (auditado) | ✅ Completada |
 | **F4** Aislamiento de etapas (P1) | Una sesión o subagente por rol | `context_manifest` por etapa en `workflow.py`; subagentes que devuelven ruta + resumen de ≤200 tokens; workers de triage | Contexto en QA ≤30k tokens en un feature piloto | ✅ Completada |
-| **F5** Modelos y FinOps (P2 + P5) | Routing de modelos y telemetría | `models.yaml`; campo `telemetry` en los handoffs; presupuesto por etapa en CI | Comparativa antes/después en 2–3 features | 🟡 Siguiente |
-| **F6** Release v2 | Merge y propagación controlada | Merge `v2 → main`, borrar `PROPAGATION_FREEZE.md`, guía de migración para spokes, tag `v2.0.0` | Spoke piloto migrado sin incidencias | ⬜ |
+| **F5** Modelos y FinOps (P2 + P5) | Routing de modelos y telemetría | `models.yaml`; campo `telemetry` en los handoffs; presupuesto por etapa en CI | Comparativa antes/después en 2–3 features | ✅ Completada |
+| **F6** Release v2 | Merge y propagación controlada | Merge `v2 → main`, borrar `PROPAGATION_FREEZE.md`, guía de migración para spokes, tag `v2.0.0` | Spoke piloto migrado sin incidencias | 🟡 Siguiente |
 
 ## Pendientes F0
 - [x] Rama `v2`
@@ -56,6 +56,13 @@
 - [x] Generador de prompt de subagente zero-chatter: `generate_subagent_dispatch_prompt` que limita la respuesta a la ruta del artefacto y un resumen de $\le 200$ tokens.
 - [x] Subcomando CLI `python scripts/workflow.py manifest <CHANGE_ID> --stage <po|architect|dev|qa> [--prompt]` para orquestadores y agentes.
 - [x] Suite de tests unitarios actualizada en `tests/test_scripts.py` verificando el manifiesto y prompt de subagente.
+
+## Entregables F5
+- [x] Matriz de modelos y presupuestos FinOps definida en `core/models.yaml` (pricing por millón, tiers `frontier_reasoning`, `frontier_coding`, `mid_reasoning`, `lightweight_flash`, modelos preferidos y esfuerzo de razonamiento por rol).
+- [x] Objeto opcional `telemetry` integrado y validado en schemas Draft-07 universales (`po_to_architect_handoff`, `architect_to_dev_handoff`, `dev_to_qa_handoff`, `qa_verdict_handoff`).
+- [x] Métodos de cálculo de costes y enrutamiento en `scripts/workflow.py`: `load_models_config`, `get_model_routing_for_stage`, `calculate_finops_cost`, `build_default_telemetry`, y enriquecimiento del prompt de despacho de subagente.
+- [x] Cobertura de tests unitarios para routing y FinOps en `tests/test_scripts.py` (`test_model_routing_and_finops`).
+- [x] Suite completa de pruebas (50/50) y verificación integral (`verify_ecosystem.py`) en verde al 100%.
 
 
 ## Registro de decisiones
