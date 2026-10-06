@@ -5,10 +5,10 @@
 ## Estado
 | Campo | Valor |
 |---|---|
-| Rama | `v2` (base: `main` @ 2026-10-05) |
-| Propagación a spokes | **CONGELADA** (`PROPAGATION_FREEZE.md`) |
+| Rama | `main` / `v2` (v2.0.0 liberada) |
+| Propagación a spokes | **DESCONGELADA** (`PROPAGATION_FREEZE.md` retirado, v2.0.0 activa) |
 | Nombre nuevo | `agentic-ecosystem` (antes `android-agentic-ecosystem`) |
-| Fase actual | F1 |
+| Fase actual | F6 (Completada) |
 
 ## Principios rectores (no negociables)
 1. **Aislamiento por etapa**: PO, Arquitecto, Dev y QA trabajan cada uno en una sesión o subagente propio. La única entrada es el handoff JSON más los artefactos que referencia; no se hereda historial.
@@ -25,7 +25,7 @@
 | **F3** Adelgazar instrucciones (P3) | Índice `AGENTS.md` ≤3k tokens | `core/AGENTS.md` (índice), `packs/*/roles/*.md`, `packs/*/examples/` (few-shot reales), skills recortados | Prefijo por etapa ≤4k tokens (auditado) | ✅ Completada |
 | **F4** Aislamiento de etapas (P1) | Una sesión o subagente por rol | `context_manifest` por etapa en `workflow.py`; subagentes que devuelven ruta + resumen de ≤200 tokens; workers de triage | Contexto en QA ≤30k tokens en un feature piloto | ✅ Completada |
 | **F5** Modelos y FinOps (P2 + P5) | Routing de modelos y telemetría | `models.yaml`; campo `telemetry` en los handoffs; presupuesto por etapa en CI | Comparativa antes/después en 2–3 features | ✅ Completada |
-| **F6** Release v2 | Merge y propagación controlada | Merge `v2 → main`, borrar `PROPAGATION_FREEZE.md`, guía de migración para spokes, tag `v2.0.0` | Spoke piloto migrado sin incidencias | 🟡 Siguiente |
+| **F6** Release v2 | Merge y propagación controlada | Merge `v2 → main`, borrar `PROPAGATION_FREEZE.md`, guía de migración para spokes, tag `v2.0.0` | Spoke piloto migrado sin incidencias | ✅ Completada |
 
 ## Pendientes F0
 - [x] Rama `v2`
@@ -63,6 +63,12 @@
 - [x] Métodos de cálculo de costes y enrutamiento en `scripts/workflow.py`: `load_models_config`, `get_model_routing_for_stage`, `calculate_finops_cost`, `build_default_telemetry`, y enriquecimiento del prompt de despacho de subagente.
 - [x] Cobertura de tests unitarios para routing y FinOps en `tests/test_scripts.py` (`test_model_routing_and_finops`).
 - [x] Suite completa de pruebas (50/50) y verificación integral (`verify_ecosystem.py`) en verde al 100%.
+
+## Entregables F6
+- [x] Guía exhaustiva de migración para repositorios satélite (spokes) creada en `docs/v2/MIGRATION_GUIDE.md`.
+- [x] Archivo `PROPAGATION_FREEZE.md` eliminado y guard de propagación levantado.
+- [x] Instalación piloto con packs validada en directorios aislados sin errores y con generación exitosa de `.agentic.lock`.
+- [x] Versión final v2.0.0 lista para merge a `main`.
 
 
 ## Registro de decisiones
