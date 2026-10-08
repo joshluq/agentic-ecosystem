@@ -3,7 +3,7 @@
 audit_context_budget.py - Context Budget and Token Footprint Auditor for Agentic Workspaces.
 
 Measures the word count, character count, and estimated LLM token footprint
-of agent instructions (AGENTS.md, copilot_instructions.md, SKILL.md files).
+of agent instructions (AGENTS.md, SKILL.md files).
 Flags context bloat and emits actionable compression recommendations.
 
 Usage:
@@ -22,7 +22,6 @@ from typing import Any, Dict, List, Optional, Tuple
 
 # Recommended budget thresholds (in word count)
 BUDGET_THRESHOLDS = {
-    "copilot_instructions": {"warn": 800, "fail": 1500, "label": "Copilot Instructions"},
     "agents_md": {"warn": 3500, "fail": 6000, "label": "AGENTS.md Role Specification"},
     "skill_md": {"warn": 1200, "fail": 2500, "label": "Skill Manifest"},
     "generic_doc": {"warn": 2000, "fail": 4000, "label": "Generic Document"},
@@ -95,12 +94,7 @@ def audit_context_budget(target_dir: Path) -> Dict[str, Any]:
             seen_agents.add(str(agent_path.resolve()))
             results.append(analyze_file(agent_path, "agents_md"))
 
-    # 2. Check copilot_instructions.md
-    copilot_path = target_dir / ".github" / "copilot_instructions.md"
-    if copilot_path.is_file():
-        results.append(analyze_file(copilot_path, "copilot_instructions"))
-
-    # 3. Check all SKILL.md files
+    # 2. Check all SKILL.md files
     skills_dirs = [
         target_dir / "skills",
         target_dir / ".gemini" / "antigravity" / "skills",

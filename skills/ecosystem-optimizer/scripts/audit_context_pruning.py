@@ -2,7 +2,7 @@
 """
 audit_context_pruning.py - Context Pruning, Redundancy, and Contradiction Auditor.
 
-Inspects system instructions, governance files (AGENTS.md, copilot_instructions.md),
+Inspects system instructions, governance files (AGENTS.md),
 and skill manifests (SKILL.md) to detect:
 1. Zero-Signal Platitudes: Obvious, generic instructions that waste context and tokens.
 2. Cross-File Redundancies: Duplicate directives across files that cause context dilution.
@@ -191,13 +191,11 @@ def detect_cross_file_redundancies(directives_by_file: Dict[Path, List[Dict[str,
     redundancies = []
     all_files = list(directives_by_file.keys())
 
-    # Sort files so AGENTS.md / copilot_instructions.md act as canonical reference (SSOT)
+    # Sort files so AGENTS.md acts as canonical reference (SSOT)
     def file_priority(p: Path) -> int:
         if p.name == "AGENTS.md" and "profiles" not in str(p) and "packs" not in str(p):
             return 0
-        if "copilot_instructions.md" in p.name:
-            return 1
-        return 2
+        return 1
 
     all_files.sort(key=file_priority)
     seen_pairs: Set[Tuple[str, int, str, int]] = set()
@@ -309,10 +307,6 @@ def audit_context_pruning(target_dir: Path) -> Dict[str, Any]:
         ]:
             if candidate.is_file() and candidate not in instruction_files:
                 instruction_files.append(candidate)
-
-    copilot_file = target_dir / ".github" / "copilot_instructions.md"
-    if copilot_file.is_file():
-        instruction_files.append(copilot_file)
 
     seen_skills = set()
     skills_dirs = [target_dir / "skills", target_dir / ".agents" / "skills", target_dir / ".gemini" / "antigravity" / "skills"]

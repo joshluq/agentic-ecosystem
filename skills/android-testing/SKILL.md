@@ -32,100 +32,38 @@ Key capabilities:
 ## 3. Testing Architecture & Patterns
 
 ### 3.1 ViewModel StateFlow Testing with MockK & Turbine
-Testing ViewModels requires managing Kotlin Coroutines dispatchers and observing `StateFlow` emissions deterministically.
+Manage coroutine dispatchers and observe `StateFlow` emissions deterministically:
 
 ```kotlin
-@OptIn(ExperimentalCoroutinesApi::class)
-class ProfileViewModelTest {
-
-    @get:Rule
-    val mainDispatcherRule = MainDispatcherRule()
-
-    private val getProfileUseCase: GetProfileUseCase = mockk()
-    private val updatePreferencesUseCase: UpdatePreferencesUseCase = mockk()
-    private lateinit var viewModel: ProfileViewModel
-
-    @Before
-    fun setUp() {
-        clearAllMocks()
-        viewModel = ProfileViewModel(
-            getProfileUseCase = getProfileUseCase,
-            updatePreferencesUseCase = updatePreferencesUseCase,
-            dispatcher = mainDispatcherRule.testDispatcher
-        )
-    }
-
-    @Test
-    fun ac01_initialState_emitsLoadingThenSuccess() = runTest {
-        val testProfile = UserProfile(id = "user_123", username = "Alex Rivera", isDarkMode = false)
-        coEvery { getProfileUseCase() } returns Result.success(testProfile)
-
-        viewModel.uiState.test {
-            assertEquals(ProfileUiState.Loading, awaitItem())
-            viewModel.handleAction(ProfileUiAction.LoadProfile)
-            val success = awaitItem() as ProfileUiState.Success
-            assertEquals("Alex Rivera", success.profile.username)
-            cancelAndIgnoreRemainingEvents()
-        }
-
-        coVerify(exactly = 1) { getProfileUseCase() }
-    }
+viewModel.uiState.test {
+    assertEquals(ProfileUiState.Loading, awaitItem())
+    viewModel.handleAction(ProfileUiAction.LoadProfile)
+    val success = awaitItem() as ProfileUiState.Success
+    assertEquals("Alex Rivera", success.profile.username)
+    cancelAndIgnoreRemainingEvents() // Prevent hot flow timeouts
 }
 ```
 
-#### Key Coroutine Testing Rules:
-- Always use `MainDispatcherRule` to override `Dispatchers.Main` with `StandardTestDispatcher`.
-- In Turbine assertion blocks, always conclude with `cancelAndIgnoreRemainingEvents()` to prevent infinite hot flow timeouts.
-- For suspending functions, use `coEvery` and `coVerify` instead of standard `every` and `verify`.
+- Always override `Dispatchers.Main` with `StandardTestDispatcher` via `MainDispatcherRule`.
+- Use `coEvery` and `coVerify` for suspending functions.
+- Detailed setup & rules: [Coroutines & Turbine Guide](./references/coroutines_turbine_guide.md)
 
 ---
 
 ### 3.2 Jetpack Compose UI Testing with Semantics Trees
-Compose tests interact with the UI semantics tree rather than raw view hierarchies.
+Interact with the UI semantics tree rather than raw view hierarchies:
 
 ```kotlin
-@RunWith(AndroidJUnit4::class) // Or RobolectricTestRunner for headless JVM execution
-class ProfileScreenTest {
-
-    @get:Rule
-    val composeTestRule = createComposeRule()
-
-    @Test
-    fun ac02_emptyUsername_disablesSaveButton() {
-        composeTestRule.setContent {
-            ProfileScreen(
-                state = ProfileUiState.Success(
-                    profile = UserProfile(id = "1", username = "", isDarkMode = false)
-                ),
-                onAction = {}
-            )
-        }
-
-        composeTestRule.onNodeWithTag("save_button")
-            .assertIsDisplayed()
-            .assertIsNotEnabled()
-    }
-
-    @Test
-    fun ac03_validInput_triggersSaveActionOnTap() {
-        var actionDispatched: ProfileUiAction? = null
-        composeTestRule.setContent {
-            ProfileScreen(
-                state = ProfileUiState.Success(
-                    profile = UserProfile(id = "1", username = "Alex", isDarkMode = false)
-                ),
-                onAction = { action -> actionDispatched = action }
-            )
-        }
-
-        composeTestRule.onNodeWithTag("save_button")
-            .assertIsEnabled()
-            .performClick()
-
-        assertTrue(actionDispatched is ProfileUiAction.SavePreferences)
-    }
+composeTestRule.setContent {
+    ProfileScreen(state = ProfileUiState.Success(profile = sampleProfile), onAction = {})
 }
+composeTestRule.onNodeWithTag("save_button")
+    .assertIsDisplayed()
+    .assertIsEnabled()
+    .performClick()
 ```
+
+- Detailed test rules, headless Robolectric setup: [Compose Testing Guide](./references/compose_testing_guide.md)
 
 #### Core Semantics Matchers & Actions:
 | Matcher / Action | Purpose |

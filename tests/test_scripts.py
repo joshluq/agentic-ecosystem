@@ -465,6 +465,11 @@ Acceptance Criteria:
             self.assertNotIn("android-staff-engineer-compose", skills_installed)
             self.assertNotIn("legal-compliance-audit", skills_installed)
 
+            # Verify official .agents/skills Antigravity directory
+            agents_skills_installed = [p.name for p in (backend_target / ".agents" / "skills").iterdir() if p.is_dir()]
+            self.assertIn("supabase-db-triage", agents_skills_installed)
+            self.assertIn("supabase-edge-functions", agents_skills_installed)
+
             # Verify profile config
             config_ex = backend_target / ".atlassian_config.json.example"
             self.assertTrue(config_ex.exists())
@@ -479,13 +484,6 @@ Acceptance Criteria:
             self.assertTrue((backend_target / "scripts" / "supabase_deployer.py").is_file())
             self.assertTrue((backend_target / "openspec" / "specs" / "architecture" / "backend_layered_architecture.md").is_file())
 
-            # Verify .github/copilot_instructions.md for Backend
-            copilot_backend = (backend_target / ".github" / "copilot_instructions.md").read_text(encoding="utf-8")
-            self.assertIn("Profile: BACKEND", copilot_backend)
-            self.assertIn("HALT GATE", copilot_backend)
-            self.assertIn("Zero Ghost Code", copilot_backend)
-            self.assertIn("Negative Testing for Business Rules (`BR-xx`)", copilot_backend)
-            self.assertIn("Supabase", copilot_backend)
 
             # Verify PRD and QA templates contain new SDD sections
             backend_prd = (backend_target / "templates" / "prd-template.md").read_text(encoding="utf-8")
@@ -507,6 +505,11 @@ Acceptance Criteria:
             self.assertNotIn("supabase-db-triage", web_skills)
             self.assertNotIn("android-device", web_skills)
 
+            # Verify official .agents/skills Antigravity directory
+            web_agents_skills = [p.name for p in (web_target / ".agents" / "skills").iterdir() if p.is_dir()]
+            self.assertIn("legal-compliance-audit", web_agents_skills)
+            self.assertIn("web-lighthouse-seo", web_agents_skills)
+
             web_agents = (web_target / "AGENTS.md").read_text(encoding="utf-8")
             self.assertIn("Web Software Architect", web_agents)
             self.assertNotIn("Backend Software Architect", web_agents)
@@ -521,11 +524,6 @@ Acceptance Criteria:
             self.assertEqual(lock_info["pack"], "backend")
             self.assertIn("core_version", lock_info)
 
-            # Verify .github/copilot_instructions.md for Web
-            copilot_web = (web_target / ".github" / "copilot_instructions.md").read_text(encoding="utf-8")
-            self.assertIn("Profile: WEB", copilot_web)
-            self.assertIn("Astro", copilot_web)
-            self.assertIn("HALT GATE", copilot_web)
 
     # 13. workflow.py Unified 2-Phase Orchestrator tests
     def test_workflow_orchestrator_lifecycle(self):

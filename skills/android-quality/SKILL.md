@@ -91,23 +91,9 @@ python skills/android-quality/scripts/lint_triage.py --lint-xml app/build/report
 python skills/android-quality/scripts/lint_triage.py --lint-xml app/build/reports/lint-results.xml --ktlint-report build/reports/ktlint.txt
 ```
 
-#### Output Schema:
-```json
-{
-  "lint_clean": true,
-  "fatal_count": 0,
-  "error_count": 0,
-  "warning_count": 0,
-  "total_issues": 0,
-  "categories": {
-    "Correctness": 0,
-    "Performance": 0,
-    "Security": 0,
-    "Usability": 0
-  },
-  "issues": []
-}
-```
+#### Output Summary:
+Produces `lint_summary.json` containing `{ "lint_clean": bool, "fatal_count": int, "error_count": int, "issues": [...] }`.
+Rules reference: [Android Lint Rules Guide](./references/lint_rules_guide.md)
 
 ---
 
@@ -124,22 +110,8 @@ python skills/android-quality/scripts/logcat_triage.py analyze --log-file tests/
 ```
 
 #### Output Schema:
-```json
-{
-  "crash_detected": true,
-  "exception_class": "java.lang.NullPointerException",
-  "message": "Attempt to invoke virtual method on a null object reference",
-  "crashing_thread": "main",
-  "culprit_file": "com/example/profile/ui/ProfileViewModel.kt",
-  "culprit_line": 42,
-  "stacktrace": [
-    "com.example.profile.ui.ProfileViewModel.savePreferences(ProfileViewModel.kt:42)",
-    "com.example.profile.ui.ProfileViewModel$savePreferences$1.invokeSuspend(ProfileViewModel.kt:38)"
-  ],
-  "target_role_for_remediation": "Senior Android Developer",
-  "defect_type": "IMPLEMENTATION_BUG"
-}
-```
+Produces `crash_ticket.json` specifying `exception_class`, `culprit_file`, `culprit_line`, `stacktrace`, and `target_role_for_remediation`.
+Schema contract: [Triage Defect Schema](./references/triage_defect_schema.json)
 
 ---
 
@@ -161,20 +133,6 @@ python skills/android-quality/scripts/sanity_check.py --dev-handoff handoffs/dev
 python skills/android-quality/scripts/sanity_check.py --mock-sample --output sanity_report.json
 ```
 
-#### Output Schema (`dev_to_qa_handoff.json`):
-```json
-{
-  "feature_id": "FEAT-001",
-  "compilation_clean": true,
-  "ktlint_clean": true,
-  "lint_clean": true,
-  "unit_tests_passed": true,
-  "metrics": {
-    "compilation_time_ms": 3200,
-    "lint_issues_count": 0,
-    "tests_total": 8,
-    "tests_failed": 0
-  },
-  "can_handoff_to_qa": true
-}
-```
+#### Output Contract:
+Generates `dev_to_qa_handoff.json` (`compilation_clean`, `ktlint_clean`, `lint_clean`, `unit_tests_passed`, `can_handoff_to_qa`).
+Canonical schema: `schemas/dev_to_qa_handoff.schema.json`

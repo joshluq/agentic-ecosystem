@@ -1,50 +1,49 @@
 ---
 name: idea-lab
-description: Product incubator, competitive benchmarking, and value hypothesis generator for KmSafe. Analyzes fleet and driver psychology, references industry-leading apps (Tesla, Fuelio, Drivvo, N26, Revolut), and scores feature opportunities via the ICE/RICE framework before code is written.
----
-# Idea Lab -- Product Incubator & Competitive Benchmarking (KmSafe)
-
-This command operates as a **product incubator and strategic innovation lab**. Its mission is to explore ideas, analyze market benchmarks, and design high-impact psychological and business solutions for drivers and fleet operators, **before writing a single line of code**.
-
-It leverages the methodologies defined in po-digital-experience-fintech.
-
+description: Product incubator, competitive benchmarking, and value hypothesis generator. Analyzes user psychology and domain benchmarks, references industry-leading patterns, and scores feature opportunities via the ICE/RICE framework before code is written.
 ---
 
-## When to Use This Command
-- When exploring an abstract idea or user wish (e.g., "notify when a nearby gas station drops price", "gamify monthly mileage budget", "vacation mode").
-- When benchmarking how leading automotive, telemetry, and Fintech apps solve a user friction point.
-- When prioritizing product bets according to their expected impact on Retention (D30), Freemium conversion, or anxiety reduction.
+# Idea Lab — Product Incubator & Competitive Benchmarking
+
+This skill operates as a **product incubator and strategic innovation lab**. Its mission is to explore product ideas, analyze industry benchmarks, and design high-impact user and business solutions **before writing a single line of code**.
+
+It leverages behavioral UX methodologies and product frameworks (ICE/RICE).
+
+---
+
+## When to Use This Skill
+- When exploring an abstract product idea or user feature request.
+- When benchmarking how market-leading apps and services solve a specific user friction point.
+- When prioritizing product bets according to their expected impact on Retention (D30), conversion, or operational efficiency.
 
 ---
 
 ## Step-by-Step Execution Protocol
 
-When the user invokes /idea-lab [topic or idea]:
+When the user invokes `/idea-lab [topic or idea]`:
 
-### 1. Problem Diagnosis & Driver Psychology
-- **Control Anxiety**: What uncertainty or pain point does this idea alleviate? (Renting excess mileage penalties? Fuel/electricity price volatility? Forgetting to log a trip?).
-- **Zero-Friction Principle**: How can the driver extract immediate value in under 5 seconds without tedious manual typing?
+### 1. Problem Diagnosis & User Psychology
+- **Friction & Anxiety**: What uncertainty, cognitive overhead, or pain point does this idea alleviate?
+- **Zero-Friction Principle**: How can the user extract immediate value with minimal manual input?
 
 ### 2. Competitive Benchmarks & Reference Patterns
-- Analyze patterns from benchmark applications:
-  - **Automotive & Telemetry**: Tesla app, Drivvo, Fuelio, Waze, Geotab.
-  - **Fintech & Behavioral UX**: N26, Revolut, Cleo (cognitive decompression, immediate visual feedback, positive reinforcement streaks).
-- Identify which superior architectural or UX pattern KmSafe should adopt or refine.
+- Analyze patterns from leading benchmark platforms across Automotive, Fintech, Mobility, and SaaS.
+- Identify superior architectural, interaction, or data sync patterns to adopt or refine.
 
-### 3. Value Proposition in KmSafe (Freemium Alignment)
-- **Core / Free Tier**: What local-first functionality provides instant utility with zero server cost?
-- **Premium Tier**: What advanced component justifies subscription conversion? (e.g., predictive volatility alerts, multi-vehicle cloud sync, unlimited audit history).
+### 3. Value Proposition & Monetization / Scale Alignment
+- **Core / Baseline Tier**: What functionality provides instant utility with minimal resource overhead?
+- **Premium / Advanced Tier**: What advanced component justifies subscription conversion or enterprise value?
 
-### 4. ICE Scoring & AARRR Metrics
+### 4. ICE Scoring & Metrics
 Evaluate the idea across a rapid scorecard:
 - **Impact (1-10)**: Effect on Activation, D30 Retention, or Premium Conversion.
 - **Confidence (1-10)**: Certainty that the hypothesis will solve the core problem.
-- **Ease (1-10)**: Technical implementation effort within KmSafe existing Clean Architecture.
+- **Ease (1-10)**: Technical implementation effort within the existing architecture.
 - **North Star Telemetry Event**: Define the exact telemetry event and parameters to track post-launch.
 
 ### 5. Output Deliverable
 Produce a concise executive brief structured as:
 1. **The Opportunity**: 1 clear paragraph on user and business value.
-2. **Key Benchmark Takeaways**: 2-3 lessons from competitor patterns.
-3. **Proposed UI Mechanics**: How this maps into the 4-Layer Clean UI pattern.
-4. **Next Steps**: Recommendation to promote the approved concept to /new-feature for technical specification.
+2. **Key Benchmark Takeaways**: 2–3 lessons from competitor patterns.
+3. **Proposed Architecture / UI Mechanics**: How this maps into the platform's architecture.
+4. **Next Steps**: Recommendation to promote the approved concept to `/new-feature` or OpenSpec for technical specification.

@@ -115,21 +115,21 @@ def check_spoke_sync(hub_dir: Path, spoke_dir: Path) -> Dict[str, Any]:
                 "detail": "Script version diverges from hub"
             })
 
-    # 3. Audit Copilot Instructions
-    spoke_copilot = spoke_dir / ".github" / "copilot_instructions.md"
-    if spoke_copilot.is_file():
+    # 3. Audit Governance (AGENTS.md)
+    spoke_agents = spoke_dir / "AGENTS.md"
+    if spoke_agents.is_file():
         results.append({
             "category": "governance",
-            "item": "copilot_instructions.md",
+            "item": "AGENTS.md",
             "status": "IN_SYNC",
-            "detail": "Present in .github/"
+            "detail": "Present in spoke root"
         })
     else:
         results.append({
             "category": "governance",
-            "item": "copilot_instructions.md",
+            "item": "AGENTS.md",
             "status": "MISSING_IN_SPOKE",
-            "detail": ".github/copilot_instructions.md missing in spoke"
+            "detail": "AGENTS.md missing in spoke root"
         })
 
     # Summary counts

@@ -15,7 +15,6 @@ As an agentic architecture grows, system prompts, living specs, and handoff cont
 
 ### 1.1 Context Budgeting & Anti-Bloat
 - **Budget Thresholds**:
-  - `copilot_instructions.md`: $\le$ 800 words (~1,000 tokens). Focus strictly on top-level golden rules and platform-specific invariants.
   - `AGENTS.md`: $\le$ 3,500 words (~4,500 tokens). Defines roles, schemas, negative constraints, and handoff state machine.
   - `SKILL.md` (per skill): $\le$ 1,200 words (~1,500 tokens). Highly focused, runnable instructions.
 - **Compression Rule**: Eliminate verbose conversational prose, decorative emojis, and duplicate boilerplate across role instructions. Prefer numbered directives and table structures.

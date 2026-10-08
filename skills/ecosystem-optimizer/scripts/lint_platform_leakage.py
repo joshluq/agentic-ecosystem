@@ -2,7 +2,7 @@
 """
 lint_platform_leakage.py - Platform Domain Isolation and Boundary Linter.
 
-Audits instruction files (AGENTS.md, copilot_instructions.md, skills) within a target
+Audits instruction files (AGENTS.md, skills) within a target
 repository or profile directory to detect cross-platform terminology leaks (e.g. Android
 Compose references leaking into Backend repos, or Supabase/Deno into Android mobile repos).
 
@@ -149,9 +149,9 @@ def lint_platform_leakage(target_dir: Path, profile: Optional[str] = None) -> Di
                         all_violations.extend(lint_file_for_profile(f, p_name))
         effective_profile = "hub (packs audited)"
     else:
-        # Check AGENTS.md, copilot_instructions.md, and skills
+        # Check AGENTS.md and skills
         files_to_check: List[Path] = []
-        for cand in [target_dir / "AGENTS.md", target_dir / ".github" / "copilot_instructions.md"]:
+        for cand in [target_dir / "AGENTS.md"]:
             if cand.is_file():
                 files_to_check.append(cand)
 

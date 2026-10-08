@@ -37,6 +37,9 @@ class TestSkillsSpecification(unittest.TestCase):
                 "supabase-db-triage",
                 "supabase-edge-functions",
                 "ecosystem-optimizer",
+                "skill-creator",
+                "ecosystem-evolution",
+                "confluence-wiki-docs",
             ]
         else:
             expected_skills = [p.name for p in self.skills_dir.iterdir() if p.is_dir()]
@@ -113,6 +116,9 @@ class TestSkillsSpecification(unittest.TestCase):
             ("ecosystem-optimizer", "lint_platform_leakage.py"),
             ("ecosystem-optimizer", "validate_spokes_sync.py"),
             ("ecosystem-optimizer", "audit_context_pruning.py"),
+            ("skill-creator", "scaffold_skill.py"),
+            ("ecosystem-evolution", "audit_ecosystem_evolution.py"),
+            ("confluence-wiki-docs", "sync_wiki_tree.py"),
         ]
 
         for skill_name, script_name in expected_scripts:
@@ -123,6 +129,34 @@ class TestSkillsSpecification(unittest.TestCase):
                 script_path.is_file(),
                 f"Helper script missing: {script_path}",
             )
+
+    def test_skill_creator_scaffolding_and_validation(self):
+        import tempfile
+        import importlib.util
+
+        script_path = self.skills_dir / "skill-creator" / "scripts" / "scaffold_skill.py"
+        self.assertTrue(script_path.is_file(), f"scaffold_skill.py not found at {script_path}")
+
+        spec = importlib.util.spec_from_file_location("scaffold_skill", str(script_path))
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            created = mod.scaffold_skill(
+                name="test-scaffolded-skill",
+                description="A test skill used exclusively for verifying automated scaffolding and validation.",
+                target_base=tmp_path,
+                scripts=["worker.py"],
+                references=["guide.md"],
+            )
+            self.assertTrue(created.is_dir())
+            self.assertTrue((created / "SKILL.md").is_file())
+            self.assertTrue((created / "scripts" / "worker.py").is_file())
+            self.assertTrue((created / "references" / "guide.md").is_file())
+
+            ok, errors = mod.validate_skill(created)
+            self.assertTrue(ok, f"Validation failed on newly scaffolded skill: {errors}")
 
 
 if __name__ == "__main__":
