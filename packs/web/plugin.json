@@ -1,0 +1,5 @@
+{
+  "name": "ecosystem-pack-web",
+  "version": "2.1.0",
+  "description": "Web discipline pack for Antigravity: Astro SSG, Tailwind CSS, Lighthouse SEO, WCAG 2.1 AA accessibility, and legal compliance."
+}

@@ -136,3 +136,25 @@ Upstream defects are remediated first. Multi-role defects route to `"Remediation
 ```
 - **Zero Ghost Code**: Never write unrequested code.
 - **Zero Implementation Before Stage 1 Sign-Off**: No production code files created or modified during Stage 1.
+
+
+---
+
+## 5. Antigravity 2.0 Subagent Orchestration & Reactive Lifecycle
+
+When operating within Antigravity 2.0 or AGY multi-agent environments, transitions in §2 map directly to native subagent invocations (`invoke_subagent`):
+
+### 5.1 Model Tier Routing
+- **Architectural & Requirement Analysis** (`product_owner`, `solutions_architect`, `software_architect`):
+  - Always execute with frontier reasoning: `Model: "pro"` (Gemini 3.8 Pro).
+- **Technical Implementation & Verification** (`senior_android_developer`, `qa_testing_engineer`):
+  - Execute with agile frontier coding/reasoning: `Model: "flash"` (Gemini 3.8 Flash).
+
+### 5.2 Workspace Isolation Strategy
+- **Stage 1 (Refinement & Spec Authoring)**:
+  - Invoked with `Workspace: "inherit"` to write specification artifacts directly to living documentation.
+- **Stage 2 (Senior Developer Code Implementation)**:
+  - Recommended `Workspace: "branch"` (isolated git branch/worktree). Prevents partial or broken code from mutating the primary workspace until unit tests and QA report verify 100% acceptance criteria pass.
+
+### 5.3 Reactive Wakeup (Zero Polling)
+- Agents never execute shell sleep loops or continuous polling. When a subagent or background task finishes, Antigravity reactively awakens the orchestrator with the full output payload.

@@ -1,0 +1,5 @@
+{
+  "name": "ecosystem-pack-backend",
+  "version": "2.1.0",
+  "description": "Backend discipline pack for Antigravity: Supabase, PostgreSQL RLS, Edge Functions, Deno, and API security governance."
+}

@@ -5,7 +5,8 @@ __pycache__/
 .pytest_cache/
 
 # Multi-agent session scratch traces
-.agents/
+.agents/*
+!.agents/hooks.json
 
 # IDEs and Editors
 .idea/

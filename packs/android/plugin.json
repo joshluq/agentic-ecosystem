@@ -1,0 +1,5 @@
+{
+  "name": "ecosystem-pack-android",
+  "version": "2.1.0",
+  "description": "Android discipline pack for Antigravity: Jetpack Compose, Kotlin, FoundationKit MVI, Gradle verification, and device triage."
+}
