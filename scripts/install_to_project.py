@@ -241,6 +241,22 @@ def install_ecosystem(target_dir: Path, mode: str = 'both', profile: str = 'andr
         tests_src = source_root / 'tests'
         copy_dir(tests_src, tests_dst, overwrite)
 
+        # Install Antigravity 2.0 lifecycle hooks (.agents/hooks.json)
+        hub_hooks = source_root / '.agents' / 'hooks.json'
+        if hub_hooks.is_file():
+            dst_hooks = target_dir / '.agents' / 'hooks.json'
+            dst_hooks.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(hub_hooks, dst_hooks)
+            print(f"    -> Installed .agents/hooks.json for Antigravity 2.0 lifecycle automation.")
+
+        # Install FinOps models configuration (.agents/models.yaml)
+        hub_models = source_root / 'core' / 'models.yaml'
+        if hub_models.is_file():
+            dst_models = target_dir / '.agents' / 'models.yaml'
+            dst_models.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(hub_models, dst_models)
+            print(f"    -> Installed .agents/models.yaml (Gemini 3.8 & FinOps routing).")
+
         # Generate profile/pack-tailored .atlassian_config.json.example
         generate_profile_config(target_dir, effective_pack)
 

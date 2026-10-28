@@ -152,13 +152,20 @@ except ImportError:
 
 def load_models_config() -> Dict[str, Any]:
     """Loads core/models.yaml configuration containing pricing and role-based model tiers."""
-    models_path = ROOT_DIR / "core" / "models.yaml"
-    if not models_path.is_file() or yaml is None:
+    candidates = [
+        ROOT_DIR / "core" / "models.yaml",
+        ROOT_DIR / ".agents" / "models.yaml",
+        ROOT_DIR / "config" / "models.yaml",
+    ]
+    if yaml is None:
         return {}
-    try:
-        return yaml.safe_load(models_path.read_text(encoding="utf-8")) or {}
-    except Exception:
-        return {}
+    for models_path in candidates:
+        if models_path.is_file():
+            try:
+                return yaml.safe_load(models_path.read_text(encoding="utf-8")) or {}
+            except Exception:
+                return {}
+    return {}
 
 
 def get_model_routing_for_stage(stage: str) -> Dict[str, Any]:
